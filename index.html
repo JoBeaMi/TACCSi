@@ -118,7 +118,8 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
 /* ── 2A: three image cards ── */
 .cards-area {
   flex:1; display:flex; gap:10px; padding:12px 14px;
-  align-items:stretch; min-height:0; overflow:hidden;
+  align-items:center; min-height:0; overflow:hidden;
+  max-height: 70vh;
 }
 .img-card {
   flex:1; border-radius:12px; overflow:hidden; cursor:pointer;
@@ -127,9 +128,9 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
   transition:border-color .13s, box-shadow .13s, transform .1s;
   display:flex; align-items:center; justify-content:center;
   position:relative; -webkit-user-select:none; user-select:none;
+  max-height: 55vh;
 }
 .img-card img { width:100%; height:100%; object-fit:contain; pointer-events:none; display:block; -webkit-user-drag:none; }
-.img-card:hover  { box-shadow:0 6px 22px rgba(0,0,0,.14); transform:translateY(-2px); }
 .img-card:active { transform:scale(.97); }
 .img-card.sel {
   border-color:var(--sel);
@@ -155,8 +156,8 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
   border:3px solid transparent; border-radius:8px;
   transition:background .12s, border-color .12s;
 }
-.hotspot:hover { background:rgba(61,184,184,.1); border-color:rgba(61,184,184,.3); }
-.hotspot.sel   { border-color:var(--sel); background:rgba(61,184,184,.18); }
+/* No hover effect on 2B — only shows after child clicks */
+.hotspot.sel { border-color:var(--sel); background:rgba(61,184,184,.18); }
 
 /* ── 2C: dynamically built ── */
 .c2c-wrap {
@@ -167,22 +168,22 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
   flex:1; display:flex; align-items:center; justify-content:center;
   gap:16px; padding:16px 24px; min-height:0; overflow:hidden;
 }
-.c2c-grumpf { height:100%; max-height:160px; object-fit:contain; flex-shrink:0; }
+.c2c-grumpf { height:100%; max-height:200px; object-fit:contain; flex-shrink:0; }
 .c2c-faces {
-  display:flex; gap:14px; padding:12px 20px; flex-shrink:0;
+  display:flex; gap:20px; padding:16px 24px; flex-shrink:0;
   background:var(--bg); border-top:2px solid var(--border);
+  justify-content:center;
 }
 .face-btn {
-  flex:1; border-radius:14px; border:4px solid transparent;
+  flex:1; max-width:260px; border-radius:16px; border:4px solid transparent;
   background:#fff; cursor:pointer; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:6px;
-  padding:12px 16px; box-shadow:0 2px 10px rgba(0,0,0,.07);
+  align-items:center; justify-content:center; gap:8px;
+  padding:16px 20px; box-shadow:0 2px 10px rgba(0,0,0,.07);
   transition:border-color .12s, transform .1s, box-shadow .12s;
-  min-height:80px; -webkit-user-select:none; user-select:none;
+  min-height:120px; -webkit-user-select:none; user-select:none;
 }
-.face-btn img { height:54px; pointer-events:none; }
-.face-btn span { font-size:.78rem; font-weight:700; color:var(--muted); pointer-events:none; }
-.face-btn:hover  { box-shadow:0 6px 20px rgba(0,0,0,.12); transform:translateY(-2px); }
+.face-btn img { height:clamp(70px, 12vh, 120px); pointer-events:none; }
+.face-btn span { font-size:.9rem; font-weight:700; color:var(--muted); pointer-events:none; }
 .face-btn:active { transform:scale(.96); }
 .face-btn.sel    { border-color:var(--sel); background:#eaf7f7; box-shadow:0 0 0 3px var(--sel-glow); }
 
@@ -446,7 +447,7 @@ tr:last-child td { border-bottom:none; }
 /* ══════════════════════════════════════════════════════
    CONFIG — paste Google Apps Script URL here after setup
 ══════════════════════════════════════════════════════ */
-const SHEETS_URL = '';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwun7ywaQy7qYnA2LHPGByQq8OEqK-Ys0Am9BbwfCmVqWBv_Go1AmLZMoUaZ41-nOAekw/exec';
 
 /* ══════════════════════════════════════════════════════
    IMAGE PATHS
