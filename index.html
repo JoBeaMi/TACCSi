@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>TACCSi</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1e32; }
+
+/* ── SCREENS ── */
+.scr { display: none; height: 100dvh; width: 100%; flex-direction: column; overflow: hidden; }
+.scr.on { display: flex; }
+
+:root {
+  --navy: #1a2e4a; --teal: #2a8a8a; --teal2: #3db8b8;
+  --bg: #f0f4f8; --border: #d0dce8; --muted: #6b7f96;
+  --sel: #3db8b8; --sel-glow: rgba(61,184,184,.25);
+}
+
+/* ══════════ WELCOME ══════════ */
+#sw {
+  background: linear-gradient(150deg,#0f1e32 0%,#1a3a5c 55%,#1a5050 100%);
+  align-items:center; justify-content:center; text-align:center; padding:40px 24px;
+}
+.w-logo { width:74px; height:74px; background:rgba(255,255,255,.1); border-radius:20px; border:2px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.w-name { font-size:2.8rem; font-weight:800; color:#fff; letter-spacing:-1px; margin-bottom:4px; }
+.w-full { font-size:.9rem; color:rgba(255,255,255,.5); max-width:400px; line-height:1.5; margin:0 auto 3px; }
+.w-ver  { font-size:.62rem; color:rgba(255,255,255,.22); letter-spacing:2px; text-transform:uppercase; margin-bottom:40px; }
+.w-tags { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:36px; }
+.w-tag  { background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14); border-radius:20px; padding:6px 16px; color:rgba(255,255,255,.65); font-size:.8rem; }
+.w-cta  { display:flex; gap:11px; justify-content:center; flex-wrap:wrap; }
+
+/* ══════════ BUTTONS ══════════ */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:12px 26px; border-radius:11px; border:none; cursor:pointer; font-family:inherit; font-weight:700; transition:all .14s; font-size:.93rem; }
+.btn-main  { background:var(--teal2); color:#fff; } .btn-main:hover  { background:#32a0a0; transform:translateY(-1px); }
+.btn-out   { background:transparent; color:#fff; border:2px solid rgba(255,255,255,.3); } .btn-out:hover { border-color:rgba(255,255,255,.65); }
+.btn-teal  { background:var(--teal); color:#fff; } .btn-teal:hover  { background:#237070; }
+.btn-ghost { background:transparent; color:var(--teal); border:2px solid var(--border); } .btn-ghost:hover { border-color:var(--teal); background:#eaf7f7; }
+.btn-white { background:#fff; color:var(--navy); } .btn-white:hover { background:#f0f4f8; }
+.btn-sm    { padding:8px 16px; font-size:.82rem; border-radius:8px; }
+.btn-lg    { padding:15px 32px; font-size:1.02rem; }
+.bk { background:rgba(255,255,255,.1); border:none; color:#fff; width:34px; height:34px; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.bk:hover { background:rgba(255,255,255,.2); }
+
+/* ══════════ SETUP ══════════ */
+#ss { background:var(--bg); overflow-y:auto; }
+.hdr { background:var(--navy); padding:20px 28px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.hdr h2 { color:#fff; font-size:1.25rem; font-weight:700; }
+.hdr p  { color:rgba(255,255,255,.38); font-size:.78rem; margin-top:1px; }
+.s-body { padding:24px 28px; max-width:660px; margin:0 auto; width:100%; }
+.s-sec  { font-size:.61rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; margin-top:20px; }
+.fg2    { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.fg     { display:flex; flex-direction:column; gap:3px; }
+.fg.fw  { grid-column:1/-1; }
+label   { font-size:.76rem; font-weight:600; color:var(--navy); }
+input, select { padding:9px 11px; border:2px solid var(--border); border-radius:8px; font-family:inherit; font-size:.88rem; background:#fff; width:100%; transition:border-color .14s; }
+input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(42,138,138,.1); }
+.age-dsp { min-height:42px; background:#eaf7f7; border:2px solid var(--teal); border-radius:8px; padding:9px 11px; font-weight:600; color:var(--teal); display:flex; align-items:center; font-size:.88rem; }
+.s-foot { padding:14px 28px; border-top:1px solid var(--border); background:#fff; display:flex; justify-content:flex-end; gap:9px; flex-shrink:0; }
+
+/* ══════════ INSTRUCTIONS ══════════ */
+#si { background:var(--bg); }
+.i-wrap { flex:1; display:flex; align-items:center; justify-content:center; padding:24px 18px; }
+.i-card { background:#fff; border-radius:14px; box-shadow:0 4px 28px rgba(0,0,0,.11); max-width:580px; width:100%; overflow:hidden; }
+.i-head { background:linear-gradient(135deg,var(--navy),#2a4a6a); padding:22px; color:#fff; }
+.i-head h2 { font-size:1.4rem; font-weight:800; margin-bottom:2px; }
+.i-head p  { color:rgba(255,255,255,.42); font-size:.8rem; }
+.i-body { padding:20px 22px; }
+.i-script { background:#eaf7f7; border-left:4px solid var(--teal); padding:13px 16px; border-radius:0 8px 8px 0; font-size:.95rem; line-height:1.7; font-style:italic; color:var(--navy); margin-bottom:14px; }
+.i-notes { list-style:disc; padding-left:16px; color:var(--muted); font-size:.8rem; line-height:1.7; }
+.i-foot { padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:9px; }
+
+/* ══════════ ITEM SCREEN ══════════ */
+
+/* Top bar */
+.t-bar { background:var(--navy); padding:7px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:10px; }
+.t-l   { display:flex; align-items:center; gap:7px; min-width:0; }
+.t-nm  { background:rgba(255,255,255,.11); border-radius:5px; padding:2px 9px; color:#fff; font-size:.7rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+.t-tk  { background:var(--teal); border-radius:5px; padding:2px 9px; color:#fff; font-size:.68rem; font-weight:700; white-space:nowrap; }
+.t-r   { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.prog  { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.prog-b{ height:3px; width:110px; background:rgba(255,255,255,.12); border-radius:2px; overflow:hidden; }
+.prog-f{ height:100%; border-radius:2px; background:var(--teal2); transition:width .35s; }
+.prog-t{ font-size:.6rem; color:rgba(255,255,255,.35); }
+.tmr   { font-size:.82rem; font-weight:700; color:#fff; background:rgba(255,255,255,.08); padding:2px 9px; border-radius:5px; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+
+/* Sentence bar — therapist reads this aloud */
+.sent-bar {
+  background:#fff;
+  border-bottom:2px solid var(--border);
+  padding:10px 20px;
+  display:flex; align-items:center; gap:10px;
+  flex-shrink:0;
+}
+.sent-ex {
+  background:var(--teal); color:#fff;
+  font-size:.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  padding:2px 8px; border-radius:8px; white-space:nowrap; flex-shrink:0;
+}
+/* 🔊 audio button placeholder — hidden until audio files are added */
+.sent-audio {
+  width:32px; height:32px; border-radius:50%;
+  background:var(--bg); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0; font-size:.9rem;
+  transition:background .14s, border-color .14s;
+}
+.sent-audio:hover { background:#eaf7f7; border-color:var(--teal); }
+.sent-audio.no-audio { opacity:.3; cursor:default; pointer-events:none; }
+.sent-text {
+  font-size:clamp(1rem, 2.5vw, 1.5rem);
+  font-weight:600; font-style:italic; color:var(--navy); line-height:1.35;
+  flex:1;
+}
+
+/* ── 2A: three image cards ── */
+.cards-area {
+  flex:1; display:flex; gap:10px; padding:12px 14px;
+  align-items:stretch; min-height:0; overflow:hidden;
+}
+.img-card {
+  flex:1; border-radius:12px; overflow:hidden; cursor:pointer;
+  border:4px solid transparent; background:#fff;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);
+  transition:border-color .13s, box-shadow .13s, transform .1s;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; -webkit-user-select:none; user-select:none;
+}
+.img-card img { width:100%; height:100%; object-fit:contain; pointer-events:none; display:block; -webkit-user-drag:none; }
+.img-card:hover  { box-shadow:0 6px 22px rgba(0,0,0,.14); transform:translateY(-2px); }
+.img-card:active { transform:scale(.97); }
+.img-card.sel {
+  border-color:var(--sel);
+  box-shadow:0 0 0 3px var(--sel-glow), 0 6px 22px rgba(0,0,0,.1);
+}
+.img-card.sel::after {
+  content:''; position:absolute; inset:0;
+  background:rgba(61,184,184,.15); pointer-events:none;
+}
+
+/* ── 2B: full slide + hotspot overlay ── */
+.slide-area {
+  flex:1; position:relative; overflow:hidden; background:#f8f9fa;
+  display:flex; align-items:center; justify-content:center; min-height:0;
+}
+.slide-img {
+  width:100%; height:100%; object-fit:contain; display:block;
+  -webkit-user-drag:none; user-select:none; pointer-events:none;
+}
+.hotspot-wrap { position:absolute; inset:0; pointer-events:none; }
+.hotspot {
+  position:absolute; cursor:pointer; pointer-events:all;
+  border:3px solid transparent; border-radius:8px;
+  transition:background .12s, border-color .12s;
+}
+.hotspot:hover { background:rgba(61,184,184,.1); border-color:rgba(61,184,184,.3); }
+.hotspot.sel   { border-color:var(--sel); background:rgba(61,184,184,.18); }
+
+/* ── 2C: dynamically built ── */
+.c2c-wrap {
+  flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden;
+  background:#fff;
+}
+.c2c-top {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  gap:16px; padding:16px 24px; min-height:0; overflow:hidden;
+}
+.c2c-grumpf { height:100%; max-height:160px; object-fit:contain; flex-shrink:0; }
+.c2c-faces {
+  display:flex; gap:14px; padding:12px 20px; flex-shrink:0;
+  background:var(--bg); border-top:2px solid var(--border);
+}
+.face-btn {
+  flex:1; border-radius:14px; border:4px solid transparent;
+  background:#fff; cursor:pointer; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:6px;
+  padding:12px 16px; box-shadow:0 2px 10px rgba(0,0,0,.07);
+  transition:border-color .12s, transform .1s, box-shadow .12s;
+  min-height:80px; -webkit-user-select:none; user-select:none;
+}
+.face-btn img { height:54px; pointer-events:none; }
+.face-btn span { font-size:.78rem; font-weight:700; color:var(--muted); pointer-events:none; }
+.face-btn:hover  { box-shadow:0 6px 20px rgba(0,0,0,.12); transform:translateY(-2px); }
+.face-btn:active { transform:scale(.96); }
+.face-btn.sel    { border-color:var(--sel); background:#eaf7f7; box-shadow:0 0 0 3px var(--sel-glow); }
+
+/* ══════════ RESULTS ══════════ */
+#sr { background:var(--bg); overflow-y:auto; }
+.r-hdr { background:var(--navy); padding:20px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:11px; flex-shrink:0; }
+.r-hdr h2 { color:#fff; font-size:1.45rem; font-weight:800; }
+.r-hdr p  { color:rgba(255,255,255,.38); font-size:.76rem; margin-top:2px; }
+.r-body   { padding:20px 28px; max-width:880px; margin:0 auto; width:100%; }
+.r-grid   { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+.r-card   { background:#fff; border-radius:12px; padding:18px 14px; box-shadow:0 2px 14px rgba(0,0,0,.07); text-align:center; }
+.r-lbl    { font-size:.58rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.r-val    { font-size:2.4rem; font-weight:800; line-height:1; margin-bottom:2px; color:var(--navy); }
+.r-sub    { font-size:.7rem; color:var(--muted); }
+.r-card.hi  { border:3px solid var(--teal); }
+.r-card.rsk { border:3px solid #d94f3d; } .r-card.rsk .r-val { color:#d94f3d; }
+.gauge    { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 14px rgba(0,0,0,.07); margin-bottom:14px; }
+.gauge h3 { font-size:.58rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+.g-bar    { height:24px; border-radius:12px; background:linear-gradient(to right,#d94f3d 0%,#f0a500 25%,#2e8b57 50%,var(--teal) 100%); position:relative; margin-bottom:5px; }
+.g-risk   { position:absolute; left:0; top:0; bottom:0; width:18.75%; background:rgba(0,0,0,.1); border-radius:12px 0 0 12px; }
+.g-mark   { position:absolute; top:-4px; width:4px; height:32px; background:var(--navy); border-radius:2px; transform:translateX(-50%); transition:left .9s cubic-bezier(.34,1.56,.64,1); }
+.g-mark::after { content:attr(data-v); position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:2px 7px; border-radius:4px; font-size:.76rem; font-weight:700; white-space:nowrap; }
+.g-lbl    { display:flex; justify-content:space-between; font-size:.6rem; color:var(--muted); font-weight:600; }
+.interp   { border-radius:12px; padding:16px 20px; margin-bottom:14px; display:flex; gap:11px; align-items:flex-start; }
+.interp.ok  { background:#f0fff4; border:2px solid #a8d5b8; }
+.interp.rsk { background:#fff5f5; border:2px solid #f0b8b0; }
+.interp .ii { font-size:1.6rem; flex-shrink:0; }
+.it { font-weight:700; font-size:.88rem; margin-bottom:2px; }
+.ix { font-size:.79rem; color:var(--muted); line-height:1.5; }
+.sub-g  { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+.sub-c  { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 14px rgba(0,0,0,.07); }
+.sub-c h4 { font-size:.58rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.bar-w  { height:7px; background:var(--bg); border-radius:4px; margin:6px 0 4px; overflow:hidden; }
+.bar-f  { height:100%; border-radius:4px; background:var(--teal); transition:width 1s ease; }
+.sub-v2 { display:flex; justify-content:space-between; align-items:baseline; }
+.sv     { font-size:1.25rem; font-weight:800; }
+.sp     { font-size:.68rem; color:var(--muted); }
+.tbl-w  { background:#fff; border-radius:12px; padding:18px; box-shadow:0 2px 14px rgba(0,0,0,.07); margin-bottom:18px; overflow-x:auto; }
+.tbl-w h3 { font-size:.58rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+table   { width:100%; border-collapse:collapse; font-size:.77rem; }
+th      { text-align:left; padding:6px 8px; font-size:.57rem; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700; border-bottom:2px solid var(--border); }
+td      { padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+.dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.dot.ok { background:#2e8b57; } .dot.ng { background:#d94f3d; } .dot.sk { background:var(--border); }
+.sync-badge { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; font-weight:600; padding:4px 12px; border-radius:20px; }
+.sync-badge.ok   { background:#f0fff4; color:#2e8b57; border:1px solid #a8d5b8; }
+.sync-badge.fail { background:#fff5f5; color:#d94f3d; border:1px solid #f0b8b0; }
+.sync-badge.wait { background:#fef9e7; color:#c07010; border:1px solid #f0d090; }
+
+.toast { position:fixed; bottom:14px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--navy); color:#fff; padding:8px 16px; border-radius:8px; font-size:.8rem; font-weight:600; transition:transform .25s; z-index:999; white-space:nowrap; }
+.toast.on { transform:translateX(-50%) translateY(0); }
+.ovl  { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000; padding:18px; }
+.ovl.on { display:flex; }
+.modal  { background:#fff; border-radius:14px; max-width:480px; width:100%; padding:24px; }
+.modal h3 { font-size:1.15rem; font-weight:800; margin-bottom:7px; }
+.modal p  { color:var(--muted); font-size:.82rem; line-height:1.6; margin-bottom:16px; }
+.m-acts { display:flex; gap:8px; justify-content:flex-end; }
+
+@media (max-width:600px) {
+  .r-grid,.sub-g { grid-template-columns:1fr; }
+  .fg2 { grid-template-columns:1fr; }
+  .hdr,.s-body,.s-foot,.r-hdr,.r-body { padding-left:16px; padding-right:16px; }
+  .sent-text { font-size:.95rem; }
+  .cards-area { gap:7px; padding:8px 10px; }
+}
+@media (orientation:portrait) and (max-width:600px) {
+  .face-btn img { height:42px; }
+  .c2c-faces { padding:8px 12px; gap:10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ WELCOME ══════ -->
+<div id="sw" class="scr on">
+  <div class="w-logo">
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="3" y="10" width="17" height="17" rx="4" fill="rgba(255,255,255,.2)"/>
+      <rect x="10" y="4"  width="17" height="17" rx="4" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.38)" stroke-width="1.4"/>
+      <path d="M13 14h9M13 20h5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="31" cy="30" r="8" fill="#3db8b8"/>
+      <path d="M28 30l1.8 1.8L34 27" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="w-name">TACCSi</div>
+  <div class="w-full">Teste de Avaliação da Compreensão e Consciência Sintática</div>
+  <div class="w-ver">Português Europeu · v1.0</div>
+  <div class="w-tags">
+    <span class="w-tag">🧩 Compreensão — a partir dos 3 anos</span>
+    <span class="w-tag">💬 Consciência — até aos 8 anos</span>
+    <span class="w-tag">⏱ ~15 min</span>
+  </div>
+  <div class="w-cta">
+    <button class="btn btn-main btn-lg" onclick="go('ss')">▶ Nova Avaliação</button>
+    <button class="btn btn-out" onclick="showAbout()">ℹ Sobre</button>
+  </div>
+</div>
+
+<!-- ══════ SETUP ══════ -->
+<div id="ss" class="scr">
+  <div class="hdr">
+    <button class="bk" onclick="go('sw')">←</button>
+    <div><h2>Nova Avaliação</h2><p>Dados da criança e da sessão</p></div>
+  </div>
+  <div class="s-body">
+    <div class="s-sec">Criança</div>
+    <div class="fg2">
+      <div class="fg fw"><label>Nome ou código</label><input id="fnm" type="text" placeholder="Ex: Maria S. ou C_01" autocomplete="off"></div>
+      <div class="fg"><label>Data de nascimento</label><input id="fdob" type="date" onchange="calcAge()"></div>
+      <div class="fg"><label>Idade calculada</label><div class="age-dsp" id="adsp">—</div></div>
+      <div class="fg"><label>Sexo</label>
+        <select id="fsx"><option value="">— Selecionar —</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
+      </div>
+      <div class="fg"><label>Escola / Instituição</label><input id="fsch" type="text" autocomplete="off"></div>
+    </div>
+    <div class="s-sec" style="margin-top:22px">Sessão</div>
+    <div class="fg2">
+      <div class="fg"><label>Terapeuta</label><input id="fex" type="text" autocomplete="off"></div>
+      <div class="fg"><label>Data</label><input id="fdt" type="date"></div>
+      <div class="fg fw"><label>Tarefas a administrar</label>
+        <select id="ftk">
+          <option value="all">2A + 2B + 2C  (protocolo completo)</option>
+          <option value="comp">2A + 2B apenas  (Compreensão)</option>
+          <option value="aware">2C apenas  (Consciência)</option>
+        </select>
+      </div>
+      <div class="fg fw"><label>Observações</label><input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
+    </div>
+  </div>
+  <div class="s-foot">
+    <button class="btn btn-ghost btn-sm" onclick="go('sw')">Cancelar</button>
+    <button class="btn btn-teal" onclick="startSession()">Continuar →</button>
+  </div>
+</div>
+
+<!-- ══════ INSTRUCTIONS ══════ -->
+<div id="si" class="scr">
+  <div class="i-wrap">
+    <div class="i-card">
+      <div class="i-head"><h2 id="i-title">—</h2><p id="i-sub">—</p></div>
+      <div class="i-body">
+        <div class="i-script" id="i-script">—</div>
+        <ul class="i-notes" id="i-notes"></ul>
+      </div>
+      <div class="i-foot">
+        <button class="btn btn-ghost btn-sm" id="i-skip" style="display:none" onclick="skipEx()">Saltar exemplo</button>
+        <button class="btn btn-teal" onclick="beginTask()">▶ Começar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 2A ══════ -->
+<div id="s2a" class="scr">
+  <div class="t-bar">
+    <div class="t-l"><span class="t-nm" id="2a-nm">—</span><span class="t-tk">2A · Passivas</span></div>
+    <div class="t-r">
+      <div class="prog"><div class="prog-b"><div class="prog-f" id="2a-pf" style="width:0%"></div></div><div class="prog-t" id="2a-pc">1/16</div></div>
+      <div class="tmr" id="2a-tm">00:00</div>
+    </div>
+  </div>
+  <div class="sent-bar" id="2a-sent-bar">
+    <div class="sent-audio no-audio" id="2a-audio" title="Áudio não disponível">🔊</div>
+    <div class="sent-text" id="2a-sent">—</div>
+  </div>
+  <div class="cards-area" id="2a-cards"></div>
+</div>
+
+<!-- ══════ 2B ══════ -->
+<div id="s2b" class="scr">
+  <div class="t-bar">
+    <div class="t-l"><span class="t-nm" id="2b-nm">—</span><span class="t-tk" id="2b-tk">2B · Relativas</span></div>
+    <div class="t-r">
+      <div class="prog"><div class="prog-b"><div class="prog-f" id="2b-pf" style="width:0%"></div></div><div class="prog-t" id="2b-pc">1/31</div></div>
+      <div class="tmr" id="2b-tm">00:00</div>
+    </div>
+  </div>
+  <div class="sent-bar">
+    <div class="sent-audio no-audio" id="2b-audio" title="Áudio não disponível">🔊</div>
+    <div class="sent-text" id="2b-sent">—</div>
+  </div>
+  <div class="slide-area" id="2b-area">
+    <img class="slide-img" id="2b-img" src="" alt="">
+    <div class="hotspot-wrap" id="2b-hw"></div>
+  </div>
+</div>
+
+<!-- ══════ 2C ══════ -->
+<div id="s2c" class="scr">
+  <div class="t-bar">
+    <div class="t-l"><span class="t-nm" id="2c-nm">—</span><span class="t-tk">2C · Consciência</span></div>
+    <div class="t-r">
+      <div class="prog"><div class="prog-b"><div class="prog-f" id="2c-pf" style="width:0%"></div></div><div class="prog-t" id="2c-pc">1/13</div></div>
+      <div class="tmr" id="2c-tm">00:00</div>
+    </div>
+  </div>
+  <div class="sent-bar">
+    <div class="sent-audio no-audio" id="2c-audio" title="Áudio não disponível">🔊</div>
+    <div class="sent-text" id="2c-sent">—</div>
+  </div>
+  <div class="c2c-wrap" id="2c-wrap">
+    <div class="c2c-top" id="2c-top">
+      <img class="c2c-grumpf" src="img/2C_Grunf.png" alt="Grumpf" id="2c-grumpf">
+    </div>
+    <div class="c2c-faces" id="2c-faces">
+      <!-- two face buttons injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ══════ RESULTS ══════ -->
+<div id="sr" class="scr">
+  <div class="r-hdr">
+    <div><h2>Relatório</h2><p id="r-meta">—</p></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <span id="sync-status"></span>
+      <button class="btn btn-out btn-sm" onclick="doCSV()">⬇ CSV</button>
+      <button class="btn btn-white btn-sm" onclick="window.print()">🖨 Imprimir</button>
+    </div>
+  </div>
+  <div class="r-body">
+    <div class="r-grid">
+      <div class="r-card"><div class="r-lbl">Score Bruto</div><div class="r-val" id="r-raw">—</div><div class="r-sub" id="r-rawsub">—</div></div>
+      <div class="r-card hi" id="r-csccard"><div class="r-lbl">CSC Padronizado</div><div class="r-val" id="r-csc">—</div><div class="r-sub">Grupo: <span id="r-grp">—</span></div></div>
+      <div class="r-card"><div class="r-lbl">Duração</div><div class="r-val" id="r-dur">—</div><div class="r-sub">minutos</div></div>
+    </div>
+    <div class="gauge" id="r-gauge">
+      <h3>Escala CSC (M=100, DP=15) — Limiar clínico: CSC &lt; 85</h3>
+      <div style="position:relative">
+        <div class="g-bar"><div class="g-risk"></div><div class="g-mark" id="gmark" data-v="—" style="left:50%"></div></div>
+        <div class="g-lbl"><span>55</span><span>70</span><span>85⚑</span><span>100</span><span>115</span><span>130</span><span>145</span></div>
+      </div>
+    </div>
+    <div class="interp ok" id="r-interp">
+      <div class="ii" id="r-icon">✅</div>
+      <div><div class="it" id="r-title">—</div><div class="ix" id="r-text">—</div></div>
+    </div>
+    <div class="sub-g">
+      <div class="sub-c"><h4>2A · Passivas</h4><div class="sub-v2"><div class="sv" id="r-2a">—</div><div class="sp" id="r-2as">—/15</div></div><div class="bar-w"><div class="bar-f" id="b-2a" style="width:0%"></div></div></div>
+      <div class="sub-c"><h4>2B · Relativas &amp; Interrogativas</h4><div class="sub-v2"><div class="sv" id="r-2b">—</div><div class="sp" id="r-2bs">—/30</div></div><div class="bar-w"><div class="bar-f" id="b-2b" style="width:0%;background:#f0a500"></div></div></div>
+      <div class="sub-c"><h4>2C · Consciência</h4><div class="sub-v2"><div class="sv" id="r-2c">—</div><div class="sp" id="r-2cs">—/12</div></div><div class="bar-w"><div class="bar-f" id="b-2c" style="width:0%;background:#6a1b9a"></div></div></div>
+    </div>
+    <div class="tbl-w">
+      <h3>Respostas item a item</h3>
+      <table><thead><tr><th>#</th><th>Tarefa</th><th>Tipo</th><th>Frase</th><th>Esperada</th><th>Obtida</th><th></th></tr></thead>
+      <tbody id="r-tbody"></tbody></table>
+    </div>
+    <div style="text-align:center;padding:10px 0 32px">
+      <button class="btn btn-teal btn-lg" onclick="newSession()">Nova avaliação</button>
+    </div>
+  </div>
+</div>
+
+<div class="ovl" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal"><h3 id="m-t">—</h3><p id="m-x">—</p><div class="m-acts"><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button></div></div>
+</div>
+<div class="toast" id="toast">—</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIG — paste Google Apps Script URL here after setup
+══════════════════════════════════════════════════════ */
+const SHEETS_URL = '';
+
+/* ══════════════════════════════════════════════════════
+   IMAGE PATHS
+   2A:  img/2A_Exemplo_1.png … img/2A_Exemplo_3.png
+        img/2A_1_1.png … img/2A_15_3.png
+   2B:  img/2B_Relativas_Exemplo.png
+        img/2B_Relativas_1.png … img/2B_Relativas_15.png
+        img/2B_Interrogativas_1.png … img/2B_Interrogativas_15.png
+   2C:  img/2C_Grunf.png
+        img/2C_greenhappysmile.png
+        img/2C_redsadsmile.png
+══════════════════════════════════════════════════════ */
+const img2A = (n, pos) => n === 'Exemplo'
+  ? `img/2A_Exemplo_${pos}.png`
+  : `img/2A_${n}_${pos}.png`;
+
+const img2B = (type, n) => n === 'Exemplo'
+  ? `img/2B_Relativas_Exemplo.png`
+  : type === 'Interrogativas'
+    ? `img/2B_Interrogativas_${n}.png`   // 16…30
+    : `img/2B_Relativas_${n}.png`;       // 1…15
+
+/* ══════════════════════════════════════════════════════
+   ITEM DATA
+══════════════════════════════════════════════════════ */
+const I2A = [
+  {n:'Exemplo',bl:1,t:'Ativa',   c:1, s:'O macaco encontrou o gato.'},
+  {n:'1', bl:0,t:'Passiva',c:2, s:'A rainha está a ser calçada pela menina.'},
+  {n:'2', bl:0,t:'Ativa',  c:1, s:'A zebra está a lamber a girafa.'},
+  {n:'3', bl:0,t:'Passiva',c:1, s:'O polícia está a ser fotografado pelo bombeiro.'},
+  {n:'4', bl:0,t:'Passiva',c:2, s:'A mãe está a ser procurada pela menina.'},
+  {n:'5', bl:0,t:'Passiva',c:3, s:'A avó está a ser tapada pela menina.'},
+  {n:'6', bl:0,t:'Ativa',  c:2, s:'O polícia está a empurrar o bombeiro.'},
+  {n:'7', bl:0,t:'Passiva',c:3, s:'O gato está a ser lambido pelo cão.'},
+  {n:'8', bl:0,t:'Ativa',  c:1, s:'A fada está a pintar a sereia.'},
+  {n:'9', bl:0,t:'Passiva',c:3, s:'A menina está a ser beijada pela avó.'},
+  {n:'10',bl:0,t:'Passiva',c:1, s:'O macaco está a ser perseguido pelo elefante.'},
+  {n:'11',bl:0,t:'Ativa',  c:2, s:'A avó está a pentear a menina.'},
+  {n:'12',bl:0,t:'Passiva',c:3, s:'O menino está a ser abraçado pelo pai.'},
+  {n:'13',bl:0,t:'Passiva',c:1, s:'O polícia está a ser barbeado pelo avô.'},
+  {n:'14',bl:0,t:'Ativa',  c:1, s:'A leoa está a arranhar a águia.'},
+  {n:'15',bl:0,t:'Passiva',c:3, s:'O macaco está a ser transportado pelo panda.'},
+];
+
+// 2B items 1-15: Relativas, 16-30: Interrogativas
+// c: 'E' = esquerda, 'D' = direita
+const I2B = [
+  {n:'Exemplo',bl:1,type:'Relativas',  t:'RS',c:'E',s:'Escolhe o cavalo que está a comer erva.'},
+  {n:'1', bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me o gato que o cão está a lamber.'},
+  {n:'2', bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me o menino que o pai está a molhar.'},
+  {n:'3', bl:0,type:'Relativas',  t:'RS',c:'E',s:'Mostra-me a menina que está a empurrar a bruxa.'},
+  {n:'4', bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me o carro que o trator está a puxar.'},
+  {n:'5', bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me a menina que a avó está a pentear.'},
+  {n:'6', bl:0,type:'Relativas',  t:'RS',c:'D',s:'Mostra-me o pato que está a bicar a galinha.'},
+  {n:'7', bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me a menina que a avó está a abraçar.'},
+  {n:'8', bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me o palhaço que o elefante está a agarrar.'},
+  {n:'9', bl:0,type:'Relativas',  t:'RS',c:'E',s:'Mostra-me o menino que está a fotografar o pai.'},
+  {n:'10',bl:0,type:'Relativas',  t:'RS',c:'D',s:'Mostra-me o cão que está a arranhar o gato.'},
+  {n:'11',bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me a menina que a bruxa está a beliscar.'},
+  {n:'12',bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me o cavalo que a vaca está a morder.'},
+  {n:'13',bl:0,type:'Relativas',  t:'RS',c:'E',s:'Mostra-me o senhor que está a segurar o rei.'},
+  {n:'14',bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me o palhaço que o pirata está a prender.'},
+  {n:'15',bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me a menina que a mãe está a lavar.'},
+  {n:'16',bl:0,type:'Interrogativas',t:'IS',c:'E',s:'Que menina é que está a sujar a bruxa?'},
+  {n:'17',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que gato é que o macaco está a arranhar?'},
+  {n:'18',bl:0,type:'Interrogativas',t:'IS',c:'D',s:'Que leão é que está a atacar o urso?'},
+  {n:'19',bl:0,type:'Interrogativas',t:'IO',c:'D',s:'Que coelho é que o porco está a morder?'},
+  {n:'20',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que menina é que a mãe está a filmar?'},
+  {n:'21',bl:0,type:'Interrogativas',t:'IS',c:'D',s:'Que menino é que está a secar o pai?'},
+  {n:'22',bl:0,type:'Interrogativas',t:'IO',c:'D',s:'Que menina é que a fada está a pintar?'},
+  {n:'23',bl:0,type:'Interrogativas',t:'IS',c:'D',s:'Que ovelha é que está a apanhar a vaca?'},
+  {n:'24',bl:0,type:'Interrogativas',t:'IO',c:'D',s:'Que menino é que o avô está a lavar?'},
+  {n:'25',bl:0,type:'Interrogativas',t:'IS',c:'E',s:'Que menina é que está a vestir a avó?'},
+  {n:'26',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que menino é que o pai está a limpar?'},
+  {n:'27',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que elefante é que o leão está a assustar?'},
+  {n:'28',bl:0,type:'Interrogativas',t:'IO',c:'D',s:'Que coelho é que o gato está a pisar?'},
+  {n:'29',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que porco é que o cão está a cheirar?'},
+  {n:'30',bl:0,type:'Interrogativas',t:'IO',c:'E',s:'Que astronauta é que o menino está a observar?'},
+];
+
+// 2C: c='C'=certa(😊 esquerda), c='E'=errada(😟 direita) — posição FIXA em todos os slides
+const I2C = [
+  {n:'Exemplo',bl:1,t:'Errada', c:'E',s:'"Eu é alto."'},
+  {n:'1', bl:0,t:'Errada', c:'E',s:'"Elas é muito altas."'},
+  {n:'2', bl:0,t:'Errada', c:'E',s:'"Casa esta é muito grande."'},
+  {n:'3', bl:0,t:'Correta',c:'C',s:'"O menino joga à bola no jardim."'},
+  {n:'4', bl:0,t:'Errada', c:'E',s:'"Os meninos vai brincar no recreio."'},
+  {n:'5', bl:0,t:'Errada', c:'E',s:'"A menina correr vai no parque."'},
+  {n:'6', bl:0,t:'Errada', c:'E',s:'"O menino calçou as bota."'},
+  {n:'7', bl:0,t:'Correta',c:'C',s:'"Eles são muito simpáticos."'},
+  {n:'8', bl:0,t:'Errada', c:'E',s:'"A menina tem um saia verde."'},
+  {n:'9', bl:0,t:'Correta',c:'C',s:'"O leão corre depressa."'},
+  {n:'10',bl:0,t:'Errada', c:'E',s:'"O senhor tem uma azul camisa."'},
+  {n:'11',bl:0,t:'Correta',c:'C',s:'"O menino fez um desenho bonito."'},
+  {n:'12',bl:0,t:'Errada', c:'E',s:'"O caracol devagar anda."'},
+];
+
+/* ══════════════════════════════════════════════════════
+   2B HOTSPOTS
+   Images are composite (both options in one file):
+   left half = Esquerda (E), right half = Direita (D)
+══════════════════════════════════════════════════════ */
+const HS2B = [
+  {v:'E', l:0,  t:0, w:50, h:100},
+  {v:'D', l:50, t:0, w:50, h:100},
+];
+
+/* ══════════════════════════════════════════════════════
+   NORMS
+══════════════════════════════════════════════════════ */
+const NORMS = {
+  g1: {label:'5;4–6;0 (64–72m)',  M:45.5, SD:9.2},
+  g2: {label:'6;1–6;10 (73–82m)', M:51.0, SD:8.4},
+};
+const csc = (r,n) => Math.round(((r - n.M) / n.SD) * 15 + 100);
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',
+          am:0, resp:{}, t0:null, ti:null, el:0, cur:null, ci:0, blocked:false };
+const key = (task, n) => task + '|' + n;
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function go(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2500);
+}
+function closeModal() { document.getElementById('modal').classList.remove('on'); }
+
+function calcAge() {
+  const dob = document.getElementById('fdob').value;
+  const dt  = document.getElementById('fdt').value || new Date().toISOString().slice(0,10);
+  if (!dob) { document.getElementById('adsp').textContent = '—'; S.am = 0; return; }
+  let m = (new Date(dt).getFullYear() - new Date(dob).getFullYear()) * 12
+        + (new Date(dt).getMonth()    - new Date(dob).getMonth());
+  if (new Date(dt).getDate() < new Date(dob).getDate()) m--;
+  S.am = m;
+  document.getElementById('adsp').textContent =
+    `${Math.floor(m/12)};${String(m%12).padStart(2,'0')}  (${m} meses)`;
+}
+
+/* ══════════════════════════════════════════════════════
+   TIMER
+══════════════════════════════════════════════════════ */
+function startTimer() {
+  if (S.ti) clearInterval(S.ti);
+  S.ti = setInterval(() => {
+    S.el = Math.floor((Date.now() - S.t0) / 1000);
+    const t = `${String(Math.floor(S.el/60)).padStart(2,'0')}:${String(S.el%60).padStart(2,'0')}`;
+    ['2a','2b','2c'].forEach(id => { const e = document.getElementById(id+'-tm'); if (e) e.textContent = t; });
+  }, 1000);
+}
+function stopTimer() { if (S.ti) { clearInterval(S.ti); S.ti = null; } }
+
+/* ══════════════════════════════════════════════════════
+   SESSION START
+══════════════════════════════════════════════════════ */
+function startSession() {
+  const nm = document.getElementById('fnm').value.trim();
+  const db = document.getElementById('fdob').value;
+  if (!nm) { toast('⚠ Introduza o nome ou código'); return; }
+  if (!db) { toast('⚠ Introduza a data de nascimento'); return; }
+  S.name = nm; S.dob = db;
+  S.sex  = document.getElementById('fsx').value;
+  S.sch  = document.getElementById('fsch').value;
+  S.ex   = document.getElementById('fex').value || '—';
+  S.dt   = document.getElementById('fdt').value || new Date().toISOString().slice(0,10);
+  S.tk   = document.getElementById('ftk').value;
+  S.nt   = document.getElementById('fnt').value;
+  S.resp = {}; S.t0 = Date.now(); S.blocked = false;
+  startTimer();
+  showInstr(S.tk === 'aware' ? '2c' : '2a');
+}
+
+/* ══════════════════════════════════════════════════════
+   INSTRUCTIONS
+══════════════════════════════════════════════════════ */
+const INSTRS = {
+  '2a': {
+    t: 'Tarefa 2A — Compreensão de Passivas',
+    s: '15 itens · 3 imagens por item · escolher 1',
+    sc: '"Agora vais ouvir uma frase. Olha para as três imagens e aponta aquela que mostra o que acontece na frase."',
+    nl: ['Leia a frase em voz alta', 'A criança toca diretamente na imagem', 'Avança automaticamente após a escolha', 'O exemplo não é pontuado']
+  },
+  '2b': {
+    t: 'Tarefa 2B — Relativas e Interrogativas',
+    s: '30 itens · 2 imagens · esquerda ou direita',
+    sc: '"Agora tens duas imagens. Ouve a frase com atenção e aponta para a imagem certa."',
+    nl: ['Leia a frase em voz alta', 'A criança toca na imagem da esquerda ou da direita', 'Avança automaticamente']
+  },
+  '2c': {
+    t: 'Tarefa 2C — Consciência Sintática',
+    s: '12 itens · a frase está certa ou errada?',
+    sc: '"Vou ler-te frases. O Grumpf às vezes fala bem, outras vezes fala mal. Aponta a cara contente se a frase está bem, a cara triste se tem um erro."',
+    nl: ['Leia a frase em voz alta', 'A criança aponta para a cara contente 😊 ou triste 😟', 'Avança automaticamente']
+  }
+};
+
+let _instrTask = null;
+function showInstr(task) {
+  _instrTask = task;
+  const d = INSTRS[task];
+  document.getElementById('i-title').textContent  = d.t;
+  document.getElementById('i-sub').textContent    = d.s;
+  document.getElementById('i-script').textContent = d.sc;
+  document.getElementById('i-notes').innerHTML    = d.nl.map(x => `<li>${x}</li>`).join('');
+  document.getElementById('i-skip').style.display = 'inline-flex';
+  go('si');
+}
+function skipEx()    { S.cur = _instrTask; S.ci = 1; render(_instrTask); }
+function beginTask() { S.cur = _instrTask; S.ci = 0; render(_instrTask); }
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function render(task) { S.cur = task; S.blocked = false;
+  if (task === '2a') render2A();
+  else if (task === '2b') render2B();
+  else render2C();
+}
+
+/* ── 2A ── */
+function render2A() {
+  go('s2a');
+  const item = I2A[S.ci];
+  document.getElementById('2a-nm').textContent = S.name;
+  document.getElementById('2a-pf').style.width = (S.ci / I2A.length * 100) + '%';
+  document.getElementById('2a-pc').textContent = (S.ci+1) + '/' + I2A.length;
+  // Sentence
+  const sentEl = document.getElementById('2a-sent');
+  sentEl.innerHTML = (item.bl ? '<span class="sent-ex">EXEMPLO</span> ' : '') + item.s;
+  // Cards
+  const cont = document.getElementById('2a-cards');
+  cont.innerHTML = '';
+  const sel = S.resp[key('2a', item.n)]?.resp ?? null;
+  [1, 2, 3].forEach(pos => {
+    const card = document.createElement('div');
+    card.className = 'img-card' + (sel === pos ? ' sel' : '');
+    card.addEventListener('pointerdown', e => { e.preventDefault(); pick('2a', pos); });
+    const img = document.createElement('img');
+    img.src = img2A(item.n, pos);
+    img.alt = 'Imagem ' + pos;
+    card.appendChild(img);
+    cont.appendChild(card);
+  });
+}
+
+/* ── 2B ── */
+function render2B() {
+  go('s2b');
+  const item = I2B[S.ci];
+  const isI  = !item.bl && item.type === 'Interrogativas';
+  document.getElementById('2b-nm').textContent  = S.name;
+  document.getElementById('2b-tk').textContent  = item.bl ? '2B · Exemplo' : isI ? '2B · Interrogativas' : '2B · Relativas';
+  document.getElementById('2b-pf').style.width  = (S.ci / I2B.length * 100) + '%';
+  document.getElementById('2b-pc').textContent  = (S.ci+1) + '/' + I2B.length;
+  document.getElementById('2b-sent').innerHTML  = (item.bl ? '<span class="sent-ex">EXEMPLO</span> ' : '') + item.s;
+  // Slide image
+  const imgEl = document.getElementById('2b-img');
+  imgEl.src = img2B(item.type, item.n);
+  const sel = S.resp[key('2b', item.n)]?.resp ?? null;
+  const doLayout = () => layout2B(sel);
+  imgEl.complete ? doLayout() : (imgEl.onload = doLayout);
+}
+
+function layout2B(sel) {
+  const area = document.getElementById('2b-area');
+  const hw   = document.getElementById('2b-hw');
+  const imgEl = document.getElementById('2b-img');
+  const aW = area.clientWidth, aH = area.clientHeight;
+  const iW = imgEl.naturalWidth  || 1916;
+  const iH = imgEl.naturalHeight || 826;
+  const scale = Math.min(aW / iW, aH / iH);
+  const rW = iW * scale, rH = iH * scale;
+  const ox = (aW - rW) / 2, oy = (aH - rH) / 2;
+  hw.style.cssText = `position:absolute; left:${ox}px; top:${oy}px; width:${rW}px; height:${rH}px; pointer-events:none;`;
+  hw.innerHTML = '';
+
+  // Subtle vertical divider line at midpoint
+  const div = document.createElement('div');
+  div.style.cssText = `position:absolute; left:50%; top:5%; width:2px; height:90%; background:rgba(42,138,138,.25); transform:translateX(-50%); pointer-events:none; border-radius:1px;`;
+  hw.appendChild(div);
+
+  HS2B.forEach(def => {
+    const el = document.createElement('div');
+    el.className = 'hotspot' + (sel === def.v ? ' sel' : '');
+    el.style.cssText = `left:${def.l}%; top:${def.t}%; width:${def.w}%; height:${def.h}%; position:absolute; pointer-events:all;`;
+    el.addEventListener('pointerdown', e => { e.preventDefault(); pick('2b', def.v); });
+    hw.appendChild(el);
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (S.cur === '2b') layout2B(S.resp[key('2b', I2B[S.ci]?.n)]?.resp ?? null);
+});
+
+/* ── 2C ── */
+function render2C() {
+  go('s2c');
+  const item = I2C[S.ci];
+  document.getElementById('2c-nm').textContent  = S.name;
+  document.getElementById('2c-pf').style.width  = (S.ci / I2C.length * 100) + '%';
+  document.getElementById('2c-pc').textContent  = (S.ci+1) + '/' + I2C.length;
+  document.getElementById('2c-sent').innerHTML  = (item.bl ? '<span class="sent-ex">EXEMPLO</span> ' : '') + item.s;
+  // Faces
+  const sel   = S.resp[key('2c', item.n)]?.resp ?? null;
+  const faces = document.getElementById('2c-faces');
+  faces.innerHTML = '';
+  [{v:'C', img:'img/2C_greenhappysmile.png', lbl:'Está certa'},
+   {v:'E', img:'img/2C_redsadsmile.png',    lbl:'Está errada'}].forEach(f => {
+    const btn = document.createElement('div');
+    btn.className = 'face-btn' + (sel === f.v ? ' sel' : '');
+    btn.innerHTML = `<img src="${f.img}" alt="${f.lbl}"><span>${f.lbl}</span>`;
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); pick('2c', f.v); });
+    faces.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   PICK & ADVANCE
+══════════════════════════════════════════════════════ */
+function pick(task, val) {
+  if (S.blocked) return;
+  const items = task === '2a' ? I2A : task === '2b' ? I2B : I2C;
+  const item  = items[S.ci];
+  S.resp[key(task, item.n)] = { resp: val, correct: val == item.c, sk: 0 };
+  S.blocked = true;
+
+  // Highlight selection (neutral teal — no correct/wrong shown to child)
+  if (task === '2a') {
+    document.querySelectorAll('#2a-cards .img-card').forEach((c,i) => {
+      c.classList.toggle('sel', i+1 === val);
+    });
+  } else if (task === '2b') {
+    document.querySelectorAll('#2b-hw .hotspot').forEach((h,i) => {
+      h.classList.toggle('sel', HS2B[i].v === val);
+    });
+  } else {
+    document.querySelectorAll('#2c-faces .face-btn').forEach((b,i) => {
+      b.classList.toggle('sel', ['C','E'][i] === val);
+    });
+  }
+
+  setTimeout(() => advance(task), 950);
+}
+
+function advance(task) {
+  const items = task === '2a' ? I2A : task === '2b' ? I2B : I2C;
+  if (S.ci >= items.length - 1) {
+    S.ci = 0;
+    if (task === '2a') S.tk === 'comp' ? finish() : showInstr('2b');
+    else if (task === '2b') S.tk !== 'comp' ? showInstr('2c') : finish();
+    else finish();
+    return;
+  }
+  S.ci++;
+  render(task);
+}
+
+/* ══════════════════════════════════════════════════════
+   FINISH & RESULTS
+══════════════════════════════════════════════════════ */
+function finish() {
+  stopTimer();
+  const dur = (S.el / 60).toFixed(1);
+  let s2a=0, s2b=0, s2c=0;
+  I2A.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2a',i.n)]?.correct) s2a++; });
+  I2B.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2b',i.n)]?.correct) s2b++; });
+  I2C.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2c',i.n)]?.correct) s2c++; });
+  const tk = S.tk;
+  let tot=0, mx=0;
+  if (tk !== 'aware') { tot += s2a + s2b; mx += 45; }
+  if (tk !== 'comp')  { tot += s2c; mx += 12; }
+
+  document.getElementById('r-meta').textContent   = `${S.name} · ${S.dob} · ${S.dt} · ${S.ex}`;
+  document.getElementById('r-raw').textContent    = tot;
+  document.getElementById('r-rawsub').textContent = 'de ' + mx + ' itens';
+  document.getElementById('r-dur').textContent    = dur;
+
+  const canC = tk === 'all' && S.am >= 64 && S.am <= 82;
+  document.getElementById('r-gauge').style.display   = canC ? '' : 'none';
+  document.getElementById('r-csccard').style.display = canC ? '' : 'none';
+
+  if (canC) {
+    const ng = S.am <= 72 ? 'g1' : 'g2';
+    const cv = csc(tot, NORMS[ng]);
+    const risk = cv < 85;
+    document.getElementById('r-csc').textContent = cv;
+    document.getElementById('r-grp').textContent = NORMS[ng].label;
+    document.getElementById('r-csccard').className = 'r-card ' + (risk ? 'rsk' : 'hi');
+    setTimeout(() => {
+      const m = document.getElementById('gmark');
+      m.style.left = Math.min(Math.max((cv-55)/90*100, 0), 100) + '%';
+      m.dataset.v  = 'CSC = ' + cv;
+    }, 350);
+    document.getElementById('r-interp').className = 'interp ' + (risk ? 'rsk' : 'ok');
+    document.getElementById('r-icon').textContent  = risk ? '⚠️' : '✅';
+    document.getElementById('r-title').textContent = risk ? 'Desempenho abaixo do esperado (CSC < 85)' : 'Desempenho dentro do esperado';
+    document.getElementById('r-text').textContent  = risk
+      ? `CSC = ${cv} está abaixo do limiar para ${NORMS[ng].label}. Recomenda-se avaliação de linguagem abrangente.`
+      : `CSC = ${cv} dentro dos limites esperados para ${NORMS[ng].label}.`;
+  } else {
+    document.getElementById('r-interp').className = 'interp ok';
+    document.getElementById('r-icon').textContent  = 'ℹ️';
+    document.getElementById('r-title').textContent = 'Score bruto registado';
+    document.getElementById('r-text').textContent  =
+      S.am > 0 && (S.am < 64 || S.am > 82)
+        ? `Criança com ${S.am} meses — fora da faixa normativa validada (64–82m). Score bruto reportado.`
+        : tk !== 'all' ? 'Protocolo parcial — score bruto reportado.'
+        : 'Score padronizado não disponível.';
+  }
+
+  setTimeout(() => {
+    document.getElementById('r-2a').textContent = s2a; document.getElementById('r-2as').textContent = s2a+'/15';
+    document.getElementById('r-2b').textContent = s2b; document.getElementById('r-2bs').textContent = s2b+'/30';
+    document.getElementById('r-2c').textContent = s2c; document.getElementById('r-2cs').textContent = s2c+'/12';
+    document.getElementById('b-2a').style.width = (tk!=='aware' ? s2a/15*100 : 0) + '%';
+    document.getElementById('b-2b').style.width = (tk!=='aware' ? s2b/30*100 : 0) + '%';
+    document.getElementById('b-2c').style.width = (tk!=='comp'  ? s2c/12*100 : 0) + '%';
+  }, 400);
+
+  // Item table
+  const tbody = document.getElementById('r-tbody'); tbody.innerHTML = '';
+  const all = [
+    ...(tk!=='aware' ? I2A.map(i=>({...i,tk:'2A',kk:key('2a',i.n)})) : []),
+    ...(tk!=='aware' ? I2B.map(i=>({...i,tk:'2B',kk:key('2b',i.n)})) : []),
+    ...(tk!=='comp'  ? I2C.map(i=>({...i,tk:'2C',kk:key('2c',i.n)})) : []),
+  ];
+  all.forEach(item => {
+    const r  = S.resp[item.kk];
+    const rv = r ? String(r.resp) : '—';
+    const dc = !r ? 'sk' : r.correct ? 'ok' : 'ng';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${item.n}</td><td>${item.tk}</td><td><code>${item.t}</code></td>
+      <td style="font-size:.71rem;max-width:200px">${item.s}</td>
+      <td><strong>${item.c}</strong></td><td>${rv}</td>
+      <td><span class="dot ${dc}"></span></td>`;
+    tbody.appendChild(tr);
+  });
+
+  go('sr');
+  sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all });
+}
+
+/* ══════════════════════════════════════════════════════
+   GOOGLE SHEETS
+══════════════════════════════════════════════════════ */
+function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all }) {
+  if (!SHEETS_URL) return;
+  const ss  = document.getElementById('sync-status');
+  ss.innerHTML = '<span class="sync-badge wait">⏳ A guardar…</span>';
+  const ng   = S.am <= 72 ? 'g1' : 'g2';
+  const canC = S.tk === 'all' && S.am >= 64 && S.am <= 82;
+  const itemCols = {};
+  all.forEach(item => {
+    const r = S.resp[item.kk];
+    itemCols[item.tk + '_' + item.n + '_resp']    = r ? String(r.resp) : 'NA';
+    itemCols[item.tk + '_' + item.n + '_correct'] = r ? (r.correct ? 1 : 0) : '';
+  });
+  const payload = {
+    timestamp: new Date().toISOString(), data: S.dt, terapeuta: S.ex,
+    crianca: S.name, dob: S.dob, idade_meses: S.am, sexo: S.sex,
+    escola: S.sch, tarefas: S.tk,
+    score_2A: s2a, score_2B: s2b, score_2C: s2c, score_total: tot, score_max: mx,
+    csc: canC ? csc(tot, NORMS[ng]) : '',
+    grupo_norm: canC ? NORMS[ng].label : '',
+    duracao_min: dur, observacoes: S.nt,
+    ...itemCols
+  };
+  fetch(SHEETS_URL, { method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+  .then(()  => { ss.innerHTML = '<span class="sync-badge ok">✅ Guardado</span>'; })
+  .catch(() => { ss.innerHTML = '<span class="sync-badge fail">❌ Falhou — use CSV</span>'; });
+}
+
+/* ══════════════════════════════════════════════════════
+   CSV
+══════════════════════════════════════════════════════ */
+function doCSV() {
+  let out = 'Tarefa,Item,Tipo,Baseline,Frase,Esperada,Obtida,Correto\n';
+  const all = [
+    ...I2A.map(i=>({...i,tk:'2A',kk:key('2a',i.n)})),
+    ...I2B.map(i=>({...i,tk:'2B',kk:key('2b',i.n)})),
+    ...I2C.map(i=>({...i,tk:'2C',kk:key('2c',i.n)})),
+  ];
+  all.forEach(item => {
+    const r = S.resp[item.kk], rv = r ? String(r.resp) : 'NA';
+    out += `${item.tk},${item.n},${item.t},${item.bl},"${item.s}",${item.c},${rv},${r?.correct?1:0}\n`;
+  });
+  let s2a=0,s2b=0,s2c=0;
+  I2A.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2a',i.n)]?.correct) s2a++; });
+  I2B.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2b',i.n)]?.correct) s2b++; });
+  I2C.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2c',i.n)]?.correct) s2c++; });
+  const canC = S.tk==='all' && S.am>=64 && S.am<=82, ng = S.am<=72?'g1':'g2';
+  out += `\n# Resumo\nCriança,${S.name}\nDOB,${S.dob}\nIdade_meses,${S.am}\nSexo,${S.sex}\nData,${S.dt}\nTerapeuta,${S.ex}\nTarefas,${S.tk}\nScore_2A,${s2a}\nScore_2B,${s2b}\nScore_2C,${s2c}\nScore_total,${s2a+s2b+s2c}\nDuracao_min,${(S.el/60).toFixed(1)}\n`;
+  if (canC) out += `CSC,${csc(s2a+s2b+s2c, NORMS[ng])}\nGrupo,${NORMS[ng].label}\n`;
+  if (S.nt) out += `Obs,"${S.nt}"\n`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out],{type:'text/csv;charset=utf-8;'}));
+  a.download = `TACCSi_${S.name.replace(/\s+/g,'_')}_${S.dt}.csv`;
+  a.click();
+  toast('✅ CSV exportado!');
+}
+
+/* ══════════════════════════════════════════════════════
+   NEW SESSION + ABOUT
+══════════════════════════════════════════════════════ */
+function newSession() {
+  stopTimer();
+  S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false };
+  ['fnm','fdob','fsx','fsch','fex','fnt'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('ftk').value = 'all';
+  document.getElementById('adsp').textContent = '—';
+  document.getElementById('fdt').value = new Date().toISOString().slice(0,10);
+  go('sw');
+}
+
+function showAbout() {
+  document.getElementById('m-t').textContent = 'Sobre o TACCSi';
+  document.getElementById('m-x').innerHTML =
+    '<strong>TACCSi</strong> — Teste de Avaliação da Compreensão e Consciência Sintática<br><br>' +
+    '<strong>2A · Passivas</strong>: 15 itens + exemplo — 3 imagens por item<br>' +
+    '<strong>2B · Relativas</strong>: 15 itens + exemplo — 2 opções E/D<br>' +
+    '<strong>2B · Interrogativas</strong>: 15 itens — 2 opções E/D<br>' +
+    '<strong>2C · Consciência</strong>: 12 itens + exemplo — certa ou errada<br><br>' +
+    'Normas CSC para 5;4–6;10 anos (protocolo completo).<br>' +
+    '<em>CAIDI / CLUNL — Universidade Nova de Lisboa</em>';
+  document.getElementById('modal').classList.add('on');
+}
+
+/* Init */
+document.getElementById('fdt').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
