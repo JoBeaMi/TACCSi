@@ -446,7 +446,7 @@ tr:last-child td { border-bottom:none; }
 /* ══════════════════════════════════════════════════════
    CONFIG — paste Google Apps Script URL here after setup
 ══════════════════════════════════════════════════════ */
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwun7ywaQy7qYnA2LHPGByQq8OEqK-Ys0Am9BbwfCmVqWBv_Go1AmLZMoUaZ41-nOAekw/exec';
+const SHEETS_URL = '';
 
 /* ══════════════════════════════════════════════════════
    IMAGE PATHS
@@ -785,15 +785,15 @@ function pick(task, val) {
 
   // Highlight selection (neutral teal — no correct/wrong shown to child)
   if (task === '2a') {
-    document.querySelectorAll('#2a-cards .img-card').forEach((c,i) => {
+    document.querySelectorAll('[id="2a-cards"] .img-card').forEach((c,i) => {
       c.classList.toggle('sel', i+1 === val);
     });
   } else if (task === '2b') {
-    document.querySelectorAll('#2b-hw .hotspot').forEach((h,i) => {
+    document.querySelectorAll('[id="2b-hw"] .hotspot').forEach((h,i) => {
       h.classList.toggle('sel', HS2B[i].v === val);
     });
   } else {
-    document.querySelectorAll('#2c-faces .face-btn').forEach((b,i) => {
+    document.querySelectorAll('[id="2c-faces"] .face-btn').forEach((b,i) => {
       b.classList.toggle('sel', ['C','E'][i] === val);
     });
   }
