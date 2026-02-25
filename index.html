@@ -17,20 +17,117 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui,
   --navy: #1a2e4a; --teal: #2a8a8a; --teal2: #3db8b8;
   --bg: #f0f4f8; --border: #d0dce8; --muted: #6b7f96;
   --sel: #3db8b8; --sel-glow: rgba(61,184,184,.25);
+  --coral: #e8734a; --yellow: #f5c842; --purple: #7c5cbf;
 }
 
 /* ══════════ WELCOME ══════════ */
 #sw {
-  background: linear-gradient(150deg,#0f1e32 0%,#1a3a5c 55%,#1a5050 100%);
-  align-items:center; justify-content:center; text-align:center; padding:40px 24px;
+  background: #0d1f35;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+  position: relative;
 }
-.w-logo { width:74px; height:74px; background:rgba(255,255,255,.1); border-radius:20px; border:2px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
-.w-name { font-size:2.8rem; font-weight:800; color:#fff; letter-spacing:-1px; margin-bottom:4px; }
-.w-full { font-size:.9rem; color:rgba(255,255,255,.5); max-width:400px; line-height:1.5; margin:0 auto 3px; }
-.w-ver  { font-size:.62rem; color:rgba(255,255,255,.22); letter-spacing:2px; text-transform:uppercase; margin-bottom:40px; }
-.w-tags { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:36px; }
-.w-tag  { background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14); border-radius:20px; padding:6px 16px; color:rgba(255,255,255,.65); font-size:.8rem; }
-.w-cta  { display:flex; gap:11px; justify-content:center; flex-wrap:wrap; }
+#sw::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(42,138,138,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 100%, rgba(124,92,191,.12) 0%, transparent 60%);
+}
+.w-inner {
+  position: relative; z-index:1;
+  width:100%; max-width:560px; margin:0 auto;
+  padding:0 0 32px;
+  display:flex; flex-direction:column; align-items:center;
+}
+
+/* HERO — centered */
+.w-hero {
+  padding: 44px 36px 28px;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  width:100%;
+}
+.w-instrument-tag {
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(61,184,184,.12); border:1px solid rgba(61,184,184,.3);
+  border-radius:6px; padding:4px 12px; margin-bottom:20px;
+  font-size:.6rem; font-weight:700; letter-spacing:2.5px;
+  text-transform:uppercase; color:var(--teal2);
+}
+.w-instrument-tag::before {
+  content:''; width:6px; height:6px; border-radius:50%;
+  background:var(--teal2); flex-shrink:0; box-shadow: 0 0 8px var(--teal2);
+}
+.w-acronym {
+  font-size: clamp(3.5rem, 10vw, 5rem);
+  font-weight:900; color:#fff; letter-spacing:-3px; line-height:1;
+  margin-bottom:10px;
+}
+.w-acronym-accent { color:var(--teal2); }
+.w-fullname {
+  font-size:.85rem; color:rgba(255,255,255,.45);
+  line-height:1.6; font-style:italic;
+}
+
+/* IMAGES — full width, tall, decorative */
+.w-example-strip {
+  display:flex; gap:0; align-items:stretch;
+  width:100%; height:220px; overflow:hidden;
+  border-top: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.03);
+}
+.w-example-strip img {
+  flex:1; width:0; height:100%;
+  object-fit:contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+}
+
+/* CTA block — centered, description subtle */
+.w-cta-block {
+  padding: 24px 36px;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  width:100%;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.w-cta-block p {
+  font-size:.75rem; color:rgba(255,255,255,.3);
+  line-height:1.65; margin-bottom:18px; max-width:380px;
+  letter-spacing:.2px;
+}
+.w-cta { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+/* CREDITS */
+.w-credits {
+  padding:24px 36px 0; width:100%; text-align:center;
+}
+.w-credits-label {
+  font-size:.55rem; font-weight:700; letter-spacing:2.5px;
+  text-transform:uppercase; color:rgba(255,255,255,.2);
+  margin-bottom:12px;
+}
+.w-authors { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+.w-author { display:flex; justify-content:center; }
+.w-author-info { text-align:center; }
+.w-author-name {
+  font-size:.78rem; font-weight:700; color:rgba(255,255,255,.7); line-height:1.3;
+}
+.w-author-detail {
+  font-size:.62rem; color:rgba(255,255,255,.28); margin-top:1px; line-height:1.4;
+}
+.w-div {
+  height:1px; background:rgba(255,255,255,.06); margin-bottom:14px;
+}
+.w-copy {
+  font-size:.58rem; color:rgba(255,255,255,.18); line-height:1.7; text-align:center;
+  padding-bottom:4px;
+}
+
+@media (max-width:480px) {
+  .w-hero, .w-cta-block, .w-credits { padding-left:22px; padding-right:22px; }
+  .w-example-strip { height:160px; }
+}
 
 /* ══════════ BUTTONS ══════════ */
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:12px 26px; border-radius:11px; border:none; cursor:pointer; font-family:inherit; font-weight:700; transition:all .14s; font-size:.93rem; }
@@ -182,7 +279,7 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
   transition:border-color .12s, transform .1s, box-shadow .12s;
   min-height:120px; -webkit-user-select:none; user-select:none;
 }
-.face-btn img { height:clamp(70px, 12vh, 120px); pointer-events:none; }
+.face-btn img { height:clamp(90px, 16vh, 150px); pointer-events:none; }
 .face-btn span { font-size:.9rem; font-weight:700; color:var(--muted); pointer-events:none; }
 .face-btn:active { transform:scale(.96); }
 .face-btn.sel    { border-color:var(--sel); background:#eaf7f7; box-shadow:0 0 0 3px var(--sel-glow); }
@@ -260,27 +357,70 @@ tr:last-child td { border-bottom:none; }
 
 <!-- ══════ WELCOME ══════ -->
 <div id="sw" class="scr on">
-  <div class="w-logo">
-    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-      <rect x="3" y="10" width="17" height="17" rx="4" fill="rgba(255,255,255,.2)"/>
-      <rect x="10" y="4"  width="17" height="17" rx="4" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.38)" stroke-width="1.4"/>
-      <path d="M13 14h9M13 20h5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-      <circle cx="31" cy="30" r="8" fill="#3db8b8"/>
-      <path d="M28 30l1.8 1.8L34 27" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+ <div class="w-inner">
+
+  <!-- HERO -->
+  <div class="w-hero">
+    <div class="w-instrument-tag">Instrumento de Avaliação · Versão Digital 2026</div>
+    <div class="w-acronym">TAC<span class="w-acronym-accent">CSi</span></div>
+    <div class="w-fullname">Teste de Avaliação da Compreensão e Consciência Sintática<br>em Português Europeu</div>
   </div>
-  <div class="w-name">TACCSi</div>
-  <div class="w-full">Teste de Avaliação da Compreensão e Consciência Sintática</div>
-  <div class="w-ver">Português Europeu · v1.0</div>
-  <div class="w-tags">
-    <span class="w-tag">🧩 Compreensão — a partir dos 3 anos</span>
-    <span class="w-tag">💬 Consciência — até aos 8 anos</span>
-    <span class="w-tag">⏱ ~15 min</span>
+
+  <!-- IMAGES full width -->
+  <div class="w-example-strip">
+    <img src="img/2A_Exemplo_1.png" alt="">
+    <img src="img/2A_Exemplo_2.png" alt="">
+    <img src="img/2A_Exemplo_3.png" alt="">
   </div>
-  <div class="w-cta">
-    <button class="btn btn-main btn-lg" onclick="go('ss')">▶ Nova Avaliação</button>
-    <button class="btn btn-out" onclick="showAbout()">ℹ Sobre</button>
+
+  <!-- CTA -->
+  <div class="w-cta-block">
+    <p>Instrumento de rastreio para avaliação da compreensão e consciência de estruturas sintáticas não-canónicas. Sem produção verbal.</p>
+    <div class="w-cta">
+      <button class="btn btn-main btn-lg" onclick="go('ss')">▶ Iniciar Avaliação</button>
+      <button class="btn btn-out btn-sm" onclick="showAbout()">ℹ Sobre</button>
+    </div>
   </div>
+
+  <!-- CREDITS -->
+  <div class="w-credits">
+    <div class="w-credits-label">Autoras</div>
+    <div class="w-authors">
+      <div class="w-author">
+        <div class="w-author-info">
+          <div class="w-author-name">Joana Batalha</div>
+          <div class="w-author-detail">Conceção &amp; validação · CLUL, Universidade de Lisboa</div>
+        </div>
+      </div>
+      <div class="w-author">
+        <div class="w-author-info">
+          <div class="w-author-name">Maria Lobo</div>
+          <div class="w-author-detail">Conceção &amp; validação · CLUL, Universidade de Lisboa</div>
+        </div>
+      </div>
+      <div class="w-author">
+        <div class="w-author-info">
+          <div class="w-author-name">Joana Miguel</div>
+          <div class="w-author-detail">Validação &amp; desenvolvimento da versão digital · CAIDI, CLUNL, Universidade Nova de Lisboa</div>
+        </div>
+      </div>
+    </div>
+    <div class="w-credits-label" style="margin-top:14px">Ilustrações</div>
+    <div class="w-author" style="margin-bottom:16px">
+      <div class="w-author-info">
+        <div class="w-author-name">Brígida</div>
+        <div class="w-author-detail">Criação das ilustrações originais do teste</div>
+      </div>
+    </div>
+    <div class="w-div"></div>
+    <div class="w-copy">
+      © 2026 Joana Batalha, Maria Lobo &amp; Joana Miguel. Todos os direitos reservados.<br>
+      A reprodução ou adaptação deste instrumento sem autorização expressa das autoras é proibida.<br>
+      CLUL · CAIDI / CLUNL · Universidade de Lisboa · Universidade Nova de Lisboa
+    </div>
+  </div>
+
+ </div>
 </div>
 
 <!-- ══════ SETUP ══════ -->
@@ -734,10 +874,7 @@ function layout2B(sel) {
   hw.style.cssText = `position:absolute; left:${ox}px; top:${oy}px; width:${rW}px; height:${rH}px; pointer-events:none;`;
   hw.innerHTML = '';
 
-  // Subtle vertical divider line at midpoint
-  const div = document.createElement('div');
-  div.style.cssText = `position:absolute; left:50%; top:5%; width:2px; height:90%; background:rgba(42,138,138,.25); transform:translateX(-50%); pointer-events:none; border-radius:1px;`;
-  hw.appendChild(div);
+  // No divider line — clean split only
 
   HS2B.forEach(def => {
     const el = document.createElement('div');
@@ -977,13 +1114,25 @@ function newSession() {
 function showAbout() {
   document.getElementById('m-t').textContent = 'Sobre o TACCSi';
   document.getElementById('m-x').innerHTML =
-    '<strong>TACCSi</strong> — Teste de Avaliação da Compreensão e Consciência Sintática<br><br>' +
-    '<strong>2A · Passivas</strong>: 15 itens + exemplo — 3 imagens por item<br>' +
-    '<strong>2B · Relativas</strong>: 15 itens + exemplo — 2 opções E/D<br>' +
-    '<strong>2B · Interrogativas</strong>: 15 itens — 2 opções E/D<br>' +
-    '<strong>2C · Consciência</strong>: 12 itens + exemplo — certa ou errada<br><br>' +
-    'Normas CSC para 5;4–6;10 anos (protocolo completo).<br>' +
-    '<em>CAIDI / CLUNL — Universidade Nova de Lisboa</em>';
+    '<strong>TACCSi</strong> — Teste de Avaliação da Compreensão e Consciência Sintática em Português Europeu<br><br>' +
+    '<strong>Descrição</strong><br>' +
+    'Instrumento de rastreio para avaliação de estruturas sintáticas não-canónicas em crianças. ' +
+    'Não requer produção verbal, sendo adequado para crianças com limitações expressivas.<br><br>' +
+    '<strong>Tarefas</strong><br>' +
+    '· <strong>2A · Passivas</strong> — 15 itens + exemplo. Frases ativas e passivas; escolha entre 3 imagens.<br>' +
+    '· <strong>2B · Relativas de objeto</strong> — 15 itens + exemplo. Escolha esquerda/direita.<br>' +
+    '· <strong>2B · Interrogativas-Q</strong> — 15 itens. Escolha esquerda/direita.<br>' +
+    '· <strong>2C · Consciência sintática</strong> — 12 itens + exemplo. Julgamento de gramaticalidade.<br><br>' +
+    '<strong>Normas</strong><br>' +
+    'Score Composto Padronizado (CSC, M=100, DP=15) disponível para crianças entre 5;4 e 6;10 anos com protocolo completo. ' +
+    'Limiar clínico: CSC &lt; 85.<br><br>' +
+    '<strong>Autoras</strong><br>' +
+    '· Joana Batalha — Conceção &amp; validação · CLUL, Universidade de Lisboa<br>' +
+    '· Maria Lobo — Conceção &amp; validação · CLUL, Universidade de Lisboa<br>' +
+    '· Joana Miguel — Validação &amp; desenvolvimento da versão digital · CAIDI, CLUNL, Universidade Nova de Lisboa<br><br>' +
+    '<strong>Ilustrações</strong><br>' +
+    '· Brígida — Criação das ilustrações originais<br><br>' +
+    '<em>© 2026 Joana Batalha, Maria Lobo &amp; Joana Miguel. Todos os direitos reservados.</em>';
   document.getElementById('modal').classList.add('on');
 }
 
