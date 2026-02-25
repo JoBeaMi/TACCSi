@@ -926,7 +926,8 @@ function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all }) {
     ...itemCols
   };
   fetch(SHEETS_URL, { method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload) })
   .then(()  => { ss.innerHTML = '<span class="sync-badge ok">✅ Guardado</span>'; })
   .catch(() => { ss.innerHTML = '<span class="sync-badge fail">❌ Falhou — use CSV</span>'; });
 }
