@@ -152,8 +152,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui,
 .fg     { display:flex; flex-direction:column; gap:3px; }
 .fg.fw  { grid-column:1/-1; }
 label   { font-size:.76rem; font-weight:600; color:var(--navy); }
-input, select { padding:9px 11px; border:2px solid var(--border); border-radius:8px; font-family:inherit; font-size:.88rem; background:#fff; width:100%; transition:border-color .14s; }
-input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(42,138,138,.1); }
+input:not([type=radio]):not([type=checkbox]), select { padding:9px 11px; border:2px solid var(--border); border-radius:8px; font-family:inherit; font-size:.88rem; background:#fff; width:100%; transition:border-color .14s; }
+input:not([type=radio]):not([type=checkbox]):focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(42,138,138,.1); }
+input[type=radio], input[type=checkbox] { width:auto; height:auto; padding:0; border:none; background:none; box-shadow:none; }
 .age-dsp { min-height:42px; background:#eaf7f7; border:2px solid var(--teal); border-radius:8px; padding:9px 11px; font-weight:600; color:var(--teal); display:flex; align-items:center; font-size:.88rem; }
 .s-foot { padding:14px 28px; border-top:1px solid var(--border); background:#fff; display:flex; justify-content:flex-end; gap:9px; flex-shrink:0; }
 
@@ -378,18 +379,23 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
 .req-note { font-size:.72rem; font-weight:400; color:#999; margin-left:6px; }
 
 /* ── Diagnosis section ── */
-.diag-wrap { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.diag-wrap { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
 .diag-opt {
   display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
   border:1.5px solid #e2e8f0; border-radius:8px; cursor:pointer;
   transition:border-color .15s, background .15s;
+  width:100%; box-sizing:border-box;
+  background:none; font:inherit; text-align:left;
 }
 .diag-opt:has(input:checked) { border-color:var(--teal); background:#f0fafa; }
-.diag-opt input[type=radio] { margin-top:3px; accent-color:var(--teal); flex-shrink:0; }
-.diag-main { display:flex; flex-direction:column; gap:2px; }
-.diag-name { font-size:.88rem; font-weight:600; color:var(--dark); }
+.diag-opt input[type=radio] {
+  margin-top:3px; accent-color:var(--teal); flex-shrink:0;
+  width:16px; height:16px;
+}
+.diag-main { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.diag-name { font-size:.88rem; font-weight:600; color:var(--dark); line-height:1.3; }
 .diag-name em { font-style:normal; color:var(--teal); }
-.diag-desc { font-size:.77rem; color:#888; }
+.diag-desc { font-size:.77rem; color:#888; line-height:1.4; }
 
 /* ── Domain checkboxes (revealed on selection) ── */
 .dom-wrap {
@@ -405,7 +411,18 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
 .dom-cb input { accent-color:var(--teal); }
 .dom-cb-w { flex-basis:100%; }
 .bio-input { width:100%; padding:7px 10px; border:1px solid #cdd5de; border-radius:6px;
-             font-size:.85rem; margin-bottom:2px; }
+             font-size:.85rem; margin-bottom:2px; box-sizing:border-box; }
+/* Ensure labels inside diag-wrap don't inherit btn styles */
+.diag-wrap label.diag-opt {
+  display:flex !important; padding:10px 12px !important;
+  font-size:inherit !important; font-weight:inherit !important;
+  border-radius:8px !important; border:1.5px solid #e2e8f0 !important;
+  background:none; color:inherit;
+}
+.diag-wrap label.diag-opt:has(input:checked) {
+  border-color:var(--teal) !important; background:#f0fafa !important;
+}
+.s-foot .btn { min-width:120px; width:auto; }
 .r-chart-wrap { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:16px 20px; margin-bottom:16px; }
 .r-chart-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .r-chart-hdr h3 { margin:0; font-size:.85rem; color:var(--dark); }
