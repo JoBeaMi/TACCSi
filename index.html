@@ -372,6 +372,10 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
 
 /* ── Task breakdown ── */
 .r-tasks { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.r-chart-wrap { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:16px 20px; margin-bottom:16px; }
+.r-chart-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.r-chart-hdr h3 { margin:0; font-size:.85rem; color:var(--dark); }
+#r-chart svg { display:block; width:100%; height:auto; }
 .r-task {
   background:#fff; border-radius:12px; padding:14px 18px;
   box-shadow:0 2px 10px rgba(0,0,0,.06);
@@ -703,6 +707,15 @@ tr:last-child td { border-bottom:none; }
       </div>
     </div>
 
+    <!-- Profile chart -->
+    <div class="r-chart-wrap" id="r-chart-wrap" style="display:none">
+      <div class="r-chart-hdr">
+        <h3>Perfil por estrutura sintática</h3>
+        <button class="btn btn-ghost btn-sm" onclick="copyChart()">📋 Copiar gráfico</button>
+      </div>
+      <div id="r-chart"></div>
+    </div>
+
     <!-- Task breakdown -->
     <div class="r-tasks" id="r-tasks"></div>
 
@@ -812,20 +825,21 @@ const I2B = [
 ];
 
 // 2C: c='C'=certa(😊 esquerda), c='E'=errada(😟 direita) — posição FIXA em todos os slides
+// sub: 'Conc'=violação de concordância, 'Ord'=violação de ordem, 'Gram'=frase gramatical
 const I2C = [
-  {n:'Exemplo',bl:1,t:'Errada', c:'E',s:'"Eu é alto."'},
-  {n:'1', bl:0,t:'Errada', c:'E',s:'"Elas é muito altas."'},
-  {n:'2', bl:0,t:'Errada', c:'E',s:'"Casa esta é muito grande."'},
-  {n:'3', bl:0,t:'Correta',c:'C',s:'"O menino joga à bola no jardim."'},
-  {n:'4', bl:0,t:'Errada', c:'E',s:'"Os meninos vai brincar no recreio."'},
-  {n:'5', bl:0,t:'Errada', c:'E',s:'"A menina correr vai no parque."'},
-  {n:'6', bl:0,t:'Errada', c:'E',s:'"O menino calçou as bota."'},
-  {n:'7', bl:0,t:'Correta',c:'C',s:'"Eles são muito simpáticos."'},
-  {n:'8', bl:0,t:'Errada', c:'E',s:'"A menina tem um saia verde."'},
-  {n:'9', bl:0,t:'Correta',c:'C',s:'"O leão corre depressa."'},
-  {n:'10',bl:0,t:'Errada', c:'E',s:'"O senhor tem uma azul camisa."'},
-  {n:'11',bl:0,t:'Correta',c:'C',s:'"O menino fez um desenho bonito."'},
-  {n:'12',bl:0,t:'Errada', c:'E',s:'"O caracol devagar anda."'},
+  {n:'Exemplo',bl:1,t:'Errada', sub:'Conc',c:'E',s:'"Eu é alto."'},
+  {n:'1', bl:0,t:'Errada', sub:'Conc',c:'E',s:'"Elas é muito altas."'},
+  {n:'2', bl:0,t:'Errada', sub:'Ord', c:'E',s:'"Casa esta é muito grande."'},
+  {n:'3', bl:0,t:'Correta',sub:'Gram',c:'C',s:'"O menino joga à bola no jardim."'},
+  {n:'4', bl:0,t:'Errada', sub:'Conc',c:'E',s:'"Os meninos vai brincar no recreio."'},
+  {n:'5', bl:0,t:'Errada', sub:'Ord', c:'E',s:'"A menina correr vai no parque."'},
+  {n:'6', bl:0,t:'Errada', sub:'Conc',c:'E',s:'"O menino calçou as bota."'},
+  {n:'7', bl:0,t:'Correta',sub:'Gram',c:'C',s:'"Eles são muito simpáticos."'},
+  {n:'8', bl:0,t:'Errada', sub:'Conc',c:'E',s:'"A menina tem um saia verde."'},
+  {n:'9', bl:0,t:'Correta',sub:'Gram',c:'C',s:'"O leão corre depressa."'},
+  {n:'10',bl:0,t:'Errada', sub:'Ord', c:'E',s:'"O senhor tem uma azul camisa."'},
+  {n:'11',bl:0,t:'Correta',sub:'Gram',c:'C',s:'"O menino fez um desenho bonito."'},
+  {n:'12',bl:0,t:'Errada', sub:'Ord', c:'E',s:'"O caracol devagar anda."'},
 ];
 
 /* ══════════════════════════════════════════════════════
@@ -842,8 +856,14 @@ const HS2B = [
    NORMS
 ══════════════════════════════════════════════════════ */
 const NORMS = {
-  g1: {label:'5;4–6;0 (64–72m)',  M:45.5, SD:9.2},
-  g2: {label:'6;1–6;10 (73–82m)', M:51.0, SD:8.4},
+  g1: {label:'5;4–6;0 (64–72m)',  M:45.5, SD:9.2,
+    sub:{ Active:.832, Passive:.632, RelSubj:.889, RelObj:.765,
+          WhQSubj:.945, WhQObj:.759, Grammatical:.832,
+          AgrConcordance:.486, AgrOrder:.403 }},
+  g2: {label:'6;1–6;10 (73–82m)', M:51.0, SD:8.4,
+    sub:{ Active:.891, Passive:.728, RelSubj:.898, RelObj:.840,
+          WhQSubj:.949, WhQObj:.810, Grammatical:.846,
+          AgrConcordance:.547, AgrOrder:.497 }},
 };
 const csc = (r,n) => Math.round(((r - n.M) / n.SD) * 15 + 100);
 
@@ -1185,16 +1205,22 @@ function finish() {
   const s2bInt = s2bIS + s2bIO;
   const s2b = s2bRel + s2bInt;
 
-  // ── 2C: Erradas vs Corretas ──
-  let s2cErrada=0, s2cCorreta=0;
+  // ── 2C: Concordância / Ordem / Gramaticais ──
+  let s2cConc=0, s2cOrd=0, s2cGram=0;
   I2C.filter(i=>!i.bl).forEach(i=>{
     if(S.resp[key('2c',i.n)]?.correct) {
-      if(i.t==='Errada') s2cErrada++; else s2cCorreta++;
+      if(i.sub==='Conc') s2cConc++; else if(i.sub==='Ord') s2cOrd++; else s2cGram++;
     }
   });
-  const n2cErrada  = I2C.filter(i=>!i.bl && i.t==='Errada').length;  // 8
-  const n2cCorreta = I2C.filter(i=>!i.bl && i.t==='Correta').length; // 4
-  const s2c = s2cErrada + s2cCorreta;
+  const n2cConc = I2C.filter(i=>!i.bl && i.sub==='Conc').length; // 4
+  const n2cOrd  = I2C.filter(i=>!i.bl && i.sub==='Ord').length;  // 4
+  const n2cGram = I2C.filter(i=>!i.bl && i.sub==='Gram').length; // 4
+  // legacy aliases for sendToSheets
+  const s2cErrada = s2cConc + s2cOrd;
+  const n2cErrada = n2cConc + n2cOrd;
+  const s2cCorreta = s2cGram;
+  const n2cCorreta = n2cGram;
+  const s2c = s2cConc + s2cOrd + s2cGram;
 
   let tot=0, mx=0;
   if (tk!=='aware') { tot += s2a + s2b; mx += 45; }
@@ -1287,108 +1313,123 @@ function finish() {
     document.getElementById('rv-rec').style.display = 'none';
   }
 
+  // ── Profile chart ──
+  drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
+                     s2bRS, n2bRS, s2bRO, n2bRO,
+                     s2bIS, n2bIS, s2bIO, n2bIO,
+                     s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
+                     tk });
+
   // ── Task breakdown ──
   const tasksEl = document.getElementById('r-tasks');
   let html = '';
 
   if (tk!=='aware') {
-    // Clinical note 2A
-    const pctPassiva = n2aPassiva>0 ? Math.round(s2aPassiva/n2aPassiva*100) : 0;
-    const pctAtiva   = n2aAtiva>0   ? Math.round(s2aAtiva/n2aAtiva*100) : 0;
-    const asym2A     = pctAtiva - pctPassiva;
+    const pctAtiva   = n2aAtiva>0   ? Math.round(s2aAtiva/n2aAtiva*100)   : 0;
+    const pctPassiva = n2aPassiva>0 ? Math.round(s2aPassiva/n2aPassiva*100): 0;
+    const asym2A = pctAtiva - pctPassiva;
     let note2A = '';
     if (pctPassiva < 85) {
       note2A = asym2A >= 20
-        ? `A criança apresenta uma assimetria marcada: ${pctAtiva}% de acertos nas frases ativas vs. ${pctPassiva}% nas passivas. `+
-          `Esta diferença indica dificuldade específica com a estrutura passiva, que envolve inversão da ordem canónica Agente–Verbo–Tema. `+
-          `Estudos com crianças portuguesas de desenvolvimento típico mostram ~90% de acertos em passivas eventivas aos 5 anos. `+
-          `Dificuldades persistentes nas passivas são marcador clínico de Perturbação do Desenvolvimento da Linguagem (PDL).`
-        : `Desempenho abaixo do esperado na compreensão de passivas. `+
-          `Esta estrutura envolve inversão da ordem básica Agente–Verbo–Tema e é um marcador sensível de dificuldades sintáticas em pré-escolares.`;
+        ? `O desempenho sugere uma possível dificuldade específica com a estrutura passiva: ${pctAtiva}% de acertos nas frases ativas contrasta com ${pctPassiva}% nas passivas. ` +
+          `Em crianças com desenvolvimento típico aos 5 anos, os estudos em Português Europeu documentam taxas de acerto geralmente acima dos 85–90% em passivas eventivas. ` +
+          `Esta assimetria pode refletir o uso de estratégias de processamento por ordem canónica (Agente–Verbo–Tema), que competem com a leitura correta da estrutura passiva. ` +
+          `Recomenda-se aprofundar a avaliação da compreensão de frases com inversão temática e integrar estes dados no contexto clínico mais alargado.`
+        : `O desempenho nas passivas situa-se abaixo do esperado para esta faixa etária, sem contudo evidenciar uma assimetria marcada em relação às frases ativas. ` +
+          `Este padrão pode refletir dificuldades de compreensão que não são exclusivamente sintáticas, ou uma fase de aquisição ainda em curso. ` +
+          `Recomenda-se observar em contexto e complementar com avaliação da compreensão de frases simples.`;
     }
-
     html += taskCard('2A','#2a8a8a','Compreensão de Passivas',
-      'Frases ativas e passivas · 15 itens · selecção de imagem entre 3 opções',
+      '15 itens · selecção de imagem (3 opções)',
       s2a, 15,
-      [
-        {label:'Frases ativas (estrutura canónica)', score:s2aAtiva, max:n2aAtiva, color:'#70b8b8'},
-        {label:'Frases passivas (estrutura não-canónica)', score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'},
-      ],
+      [{label:'Ativas — canónicas',     score:s2aAtiva,   max:n2aAtiva,   color:'#70b8b8'},
+       {label:'Passivas — não-canónicas', score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'}],
       note2A);
 
-    // Clinical note 2B Relativas
     const pctRS = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
     const pctRO = n2bRO>0 ? Math.round(s2bRO/n2bRO*100) : 0;
     const asym2BRel = pctRS - pctRO;
     let noteRel = '';
     if (pctRO < 85) {
       noteRel = asym2BRel >= 20
-        ? `Assimetria sujeito/objeto marcada: ${pctRS}% nas relativas de sujeito vs. ${pctRO}% nas relativas de objeto. `+
-          `As relativas de objeto envolvem movimento do objeto para posição periférica, com o sujeito a intervir — `+
-          `criando efeitos de intervenção que são especialmente difíceis para crianças com PDL. `+
-          `Estudos em Português Europeu mostram que crianças com PDL obtêm ~55% de acertos nas relativas de objeto `+
-          `vs. ~98% nas de sujeito. Esta assimetria é um dos marcadores clínicos mais robustos de perturbação sintática.`
-        : `Dificuldade nas relativas de objeto. Esta estrutura — com ordem Tema–Agente–Verbo — é um marcador clínico `+
-          `sensível de perturbação sintática em pré-escolares.`;
+        ? `O padrão observado — maior acerto nas relativas de sujeito (${pctRS}%) do que nas de objeto (${pctRO}%) — é consistente com a assimetria sujeito/objeto documentada na literatura. ` +
+          `As relativas de objeto envolvem o movimento do núcleo nominal para posição periférica, com o sujeito da relativa a intervir na cadeia sintática — ` +
+          `uma configuração que impõe um custo de processamento considerável. ` +
+          `Em Português Europeu, crianças com PDL tendem a manter o desempenho nas relativas de sujeito (~98%) enquanto apresentam dificuldades marcadas nas de objeto (~55%), ` +
+          `ao contrário das crianças com desenvolvimento típico de 5 anos (~68%). ` +
+          `A magnitude da assimetria observada justifica o aprofundamento da avaliação sintática e a integração com outras fontes de informação clínica.`
+        : `As relativas de objeto apresentam um desempenho abaixo do limiar de referência, sem que se observe uma assimetria muito marcada em relação às relativas de sujeito. ` +
+          `Estas estruturas envolvem configurações sintáticas não-canónicas que são tipicamente mais exigentes em termos de processamento. ` +
+          `Recomenda-se monitorizar a evolução e considerar avaliação complementar da compreensão de frases complexas.`;
     }
-
     html += taskCard('2B·Rel','#7c5cbf','Relativas de Sujeito e de Objeto',
-      'Orações relativas · 15 itens · selecção esquerda/direita',
+      '15 itens · selecção esquerda/direita',
       s2bRel, 15,
-      [
-        {label:'Relativas de sujeito (RS)', score:s2bRS, max:n2bRS, color:'#b09de0'},
-        {label:'Relativas de objeto (RO — marcador clínico)', score:s2bRO, max:n2bRO, color:'#5a3a9a'},
-      ],
+      [{label:'Sujeito — RS (canónicas)',      score:s2bRS, max:n2bRS, color:'#b09de0'},
+       {label:'Objeto — RO (marcador clínico)', score:s2bRO, max:n2bRO, color:'#5a3a9a'}],
       noteRel);
 
-    // Clinical note 2B Interrogativas
     const pctIS = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
     const pctIO = n2bIO>0 ? Math.round(s2bIO/n2bIO*100) : 0;
     const asym2BInt = pctIS - pctIO;
     let noteInt = '';
     if (pctIO < 85) {
       noteInt = asym2BInt >= 20
-        ? `Assimetria sujeito/objeto marcada: ${pctIS}% nas interrogativas de sujeito vs. ${pctIO}% nas de objeto. `+
-          `As interrogativas-Q de objeto envolvem deslocamento do elemento-Q para posição periférica, `+
-          `com efeitos de intervenção semelhantes às relativas de objeto. `+
-          `Estudos mostram que crianças de desenvolvimento típico aos 5 anos obtêm ~69% nas interrogativas de objeto `+
-          `vs. ~97% nas de sujeito — e crianças com PDL apresentam dificuldades ainda mais acentuadas.`
-        : `Dificuldade nas interrogativas-Q de objeto. Envolvem deslocamento sintático semelhante ao das relativas de objeto `+
-          `e são igualmente sensíveis a perturbações do desenvolvimento sintático.`;
+        ? `O padrão observado sugere uma possível dificuldade específica com as interrogativas de objeto: ${pctIS}% nas interrogativas de sujeito versus ${pctIO}% nas de objeto. ` +
+          `Estruturalmente, as interrogativas-Q de objeto partilham com as relativas de objeto o fenómeno de intervenção sintática — ` +
+          `o elemento-Q desloca-se por sobre o sujeito referencial, criando uma configuração não-canónica. ` +
+          `Em crianças com desenvolvimento típico aos 5 anos, as taxas de acerto nas interrogativas de objeto situam-se tipicamente em torno de 69%, ` +
+          `subindo progressivamente com a idade e com intervenção. ` +
+          `A observação de dificuldades nesta estrutura é clinicamente relevante, em especial quando combinada com dificuldades nas relativas de objeto.`
+        : `As interrogativas de objeto apresentam desempenho abaixo do limiar de referência. ` +
+          `Estas estruturas partilham com as relativas de objeto mecanismos de deslocamento sintático com efeitos de intervenção, ` +
+          `e tendem a ser adquiridas de forma gradual ao longo da idade pré-escolar. ` +
+          `Recomenda-se integrar estes resultados com os das relativas de objeto para uma leitura do perfil sintático mais completa.`;
     }
-
     html += taskCard('2B·Int','#e8734a','Interrogativas-Q de Sujeito e de Objeto',
-      'Perguntas com elemento deslocado · 15 itens · selecção esquerda/direita',
+      '15 itens · selecção esquerda/direita',
       s2bInt, 15,
-      [
-        {label:'Interrogativas de sujeito (IS)', score:s2bIS, max:n2bIS, color:'#f0a070'},
-        {label:'Interrogativas de objeto (IO — marcador clínico)', score:s2bIO, max:n2bIO, color:'#c04010'},
-      ],
+      [{label:'Sujeito — IS (canónicas)',      score:s2bIS, max:n2bIS, color:'#f0a070'},
+       {label:'Objeto — IO (marcador clínico)', score:s2bIO, max:n2bIO, color:'#c04010'}],
       noteInt);
   }
 
   if (tk!=='comp') {
-    const pctErrada  = n2cErrada>0  ? Math.round(s2cErrada/n2cErrada*100) : 0;
-    const pctCorreta = n2cCorreta>0 ? Math.round(s2cCorreta/n2cCorreta*100) : 0;
+    const pctConc = n2cConc>0 ? Math.round(s2cConc/n2cConc*100) : 0;
+    const pctOrd  = n2cOrd>0  ? Math.round(s2cOrd/n2cOrd*100)   : 0;
+    const pctGram = n2cGram>0 ? Math.round(s2cGram/n2cGram*100) : 0;
+    const asymConc = pctConc - pctOrd; // positive = better on agreement
     let note2C = '';
-    if (s2c/12 < 0.85) {
-      note2C = (pctErrada < pctCorreta)
-        ? `A criança tem mais dificuldade em detectar frases agramaticais (${pctErrada}%) `+
-          `do que em aceitar frases gramaticais (${pctCorreta}%). `+
-          `A investigação em Português Europeu mostra que crianças pré-escolares são mais sensíveis `+
-          `a violações de concordância do que a violações de ordem de palavras.`
-        : `Dificuldade no julgamento de gramaticalidade. A consciência sintática é cognitivamente mais exigente `+
-          `do que a compreensão, mas o julgamento de gramaticalidade é considerado adequado para pré-escolares `+
-          `por não exigir metalinguagem explícita.`;
+    if (s2c / 12 < 0.85) {
+      if (pctConc >= 75 && pctOrd < 60) {
+        note2C = `O padrão observado — melhor desempenho nas violações de concordância (${pctConc}%) do que nas de ordem de palavras (${pctOrd}%) — ` +
+          `é consistente com o que a investigação descreve para crianças com desenvolvimento típico em idade pré-escolar. ` +
+          `A sensibilidade à ordem de palavras tende a ser adquirida mais tarde do que a concordância, ` +
+          `pelo que este padrão pode refletir uma fase de desenvolvimento ainda em curso. ` +
+          `Recomenda-se monitorizar, em particular a evolução da detecção de violações de ordem.`;
+      } else if (pctOrd >= 75 && pctConc < 60) {
+        note2C = `O desempenho nas violações de ordem de palavras (${pctOrd}%) é superior ao das violações de concordância (${pctConc}%). ` +
+          `Este padrão é atípico: a investigação em Português Europeu indica que as crianças pré-escolares são geralmente mais sensíveis ` +
+          `a violações de concordância do que a violações de ordem. ` +
+          `Dificuldades específicas com a concordância merecem acompanhamento e poderão orientar objetivos de intervenção.`;
+      } else if (pctConc < 60 && pctOrd < 60) {
+        note2C = `A criança apresenta dificuldades tanto nas violações de concordância (${pctConc}%) como nas de ordem de palavras (${pctOrd}%). ` +
+          `Um desempenho baixo em ambos os tipos de violação pode sugerir menor reflexão meta-sintática de forma mais generalizada, ` +
+          `ou dificuldade em manter a atenção e compreender a tarefa de julgamento. ` +
+          `Importa integrar estes dados com os da compreensão e com a observação clínica.`;
+      } else {
+        note2C = `O desempenho na consciência sintática situa-se abaixo do limiar de referência (concordância: ${pctConc}%, ordem: ${pctOrd}%). ` +
+          `A tarefa de julgamento de gramaticalidade não requer metalinguagem explícita — a criança apenas indica se a frase "soa bem" — ` +
+          `mas é cognitivamente mais exigente do que as tarefas de compreensão. ` +
+          `Recomenda-se interpretar estes resultados em conjunto com o perfil global de compreensão.`;
+      }
     }
-
     html += taskCard('2C','#3aab6d','Consciência Sintática',
-      'Julgamento de gramaticalidade · 12 itens',
+      '12 itens · julgamento de gramaticalidade',
       s2c, 12,
-      [
-        {label:'Frases agramaticais (detectar erro)', score:s2cErrada, max:n2cErrada, color:'#70c890'},
-        {label:'Frases gramaticais (aceitar correto)', score:s2cCorreta, max:n2cCorreta, color:'#1a7a40'},
-      ],
+      [{label:'Gramaticais — aceitar',         score:s2cGram, max:n2cGram, color:'#a8dfc0'},
+       {label:'Agramaticais: concordância',     score:s2cConc, max:n2cConc, color:'#3aab6d'},
+       {label:'Agramaticais: ordem de palavras',score:s2cOrd,  max:n2cOrd,  color:'#1a7a40'}],
       note2C);
   }
 
@@ -1418,6 +1459,140 @@ function finish() {
     console.error('finish() error:', e);
     alert('Erro no relatório: ' + e.message + '\n' + e.stack?.split('\n')[1]);
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   PROFILE CHART
+══════════════════════════════════════════════════════ */
+function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
+                             s2bRS, n2bRS, s2bRO, n2bRO,
+                             s2bIS, n2bIS, s2bIO, n2bIO,
+                             s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
+                             tk }) {
+  const groups = [];
+  if (tk !== 'aware') {
+    groups.push({ label:'2A · Passivas', color:'#2a8a8a', bars:[
+      { label:'Ativas (canónicas)',       score:s2aAtiva,   max:n2aAtiva,   color:'#5ba8a8' },
+      { label:'Passivas',                 score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a' },
+    ]});
+    groups.push({ label:'2B · Relativas', color:'#7c5cbf', bars:[
+      { label:'Sujeito — RS (canónicas)', score:s2bRS, max:n2bRS, color:'#a88fdf' },
+      { label:'Objeto — RO',              score:s2bRO, max:n2bRO, color:'#4a2a8a' },
+    ]});
+    groups.push({ label:'2B · Interrogativas', color:'#e8734a', bars:[
+      { label:'Sujeito — IS (canónicas)', score:s2bIS, max:n2bIS, color:'#f0a878' },
+      { label:'Objeto — IO',              score:s2bIO, max:n2bIO, color:'#a03010' },
+    ]});
+  }
+  if (tk !== 'comp') {
+    groups.push({ label:'2C · Consciência', color:'#3aab6d', bars:[
+      { label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0' },
+      { label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d' },
+      { label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40' },
+    ]});
+  }
+
+  const W = 560, lm = 168, rm = 80, chartW = W - lm - rm;
+  const barH = 20, barGap = 5, groupGap = 20, groupLabelH = 22;
+  const topPad = 34, botPad = 34;
+  const refX = lm + chartW * 0.85;
+
+  let totalH = topPad;
+  groups.forEach((g, gi) => {
+    totalH += groupLabelH + g.bars.length * (barH + barGap);
+    if (gi < groups.length - 1) totalH += groupGap;
+  });
+  totalH += botPad;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" id="profile-svg" viewBox="0 0 ${W} ${totalH}" width="${W}" height="${totalH}" style="font-family:system-ui,sans-serif;max-width:100%">`;
+  svg += `<rect width="${W}" height="${totalH}" fill="#fafbfc" rx="8"/>`;
+
+  // Grid lines + axis labels
+  [0, 25, 50, 75, 100].forEach(pct => {
+    const x = lm + chartW * pct / 100;
+    svg += `<line x1="${x}" y1="${topPad - 6}" x2="${x}" y2="${totalH - botPad + 6}" stroke="${pct===0?'#ccc':'#e8e8e8'}" stroke-width="${pct===0?1.5:1}"/>`;
+    svg += `<text x="${x}" y="${topPad - 12}" text-anchor="middle" font-size="9" fill="#bbb">${pct}%</text>`;
+  });
+
+  // Limiar 85%
+  svg += `<line x1="${refX}" y1="${topPad - 18}" x2="${refX}" y2="${totalH - botPad + 6}" stroke="#d94f3d" stroke-width="1.5" stroke-dasharray="5,3" opacity=".85"/>`;
+  svg += `<text x="${refX}" y="${topPad - 20}" text-anchor="middle" font-size="8.5" fill="#d94f3d" font-weight="600">85%</text>`;
+
+  let y = topPad;
+  groups.forEach((g, gi) => {
+    svg += `<text x="${lm - 8}" y="${y + groupLabelH - 7}" text-anchor="end" font-size="10.5" font-weight="700" fill="${g.color}">${g.label}</text>`;
+    y += groupLabelH;
+
+    g.bars.forEach(b => {
+      const pct   = b.max > 0 ? b.score / b.max * 100 : 0;
+      const barW  = Math.max(0, chartW * pct / 100);
+      const pctR  = Math.round(pct);
+
+      // Track
+      svg += `<rect x="${lm}" y="${y}" width="${chartW}" height="${barH}" fill="#eaecf0" rx="4"/>`;
+
+      // Actual bar — colour by performance zone
+      if (barW > 0) {
+        const col = pct < 50 ? '#c0392b' : pct < 70 ? '#c87820' : pct < 85 ? '#8a7000' : b.color;
+        svg += `<rect x="${lm}" y="${y}" width="${barW}" height="${barH}" fill="${col}" rx="4" opacity=".88"/>`;
+      }
+
+      // Row label
+      svg += `<text x="${lm - 6}" y="${y + barH/2 + 4}" text-anchor="end" font-size="10" fill="#333">${b.label}</text>`;
+
+      // Score right of bar
+      const scoreStr = b.max > 0 ? `${b.score}/${b.max} (${pctR}%)` : '—';
+      svg += `<text x="${lm + barW + 5}" y="${y + barH/2 + 4}" font-size="9" fill="#555">${scoreStr}</text>`;
+
+      y += barH + barGap;
+    });
+
+    if (gi < groups.length - 1) y += groupGap;
+  });
+
+  // Legend
+  const legY = totalH - 14;
+  svg += `<rect x="${lm}" y="${legY-6}" width="12" height="12" fill="#c0392b" rx="2" opacity=".8"/>`;
+  svg += `<text x="${lm+16}" y="${legY+4}" font-size="8" fill="#888">&lt;50%</text>`;
+  svg += `<rect x="${lm+46}" y="${legY-6}" width="12" height="12" fill="#c87820" rx="2" opacity=".8"/>`;
+  svg += `<text x="${lm+62}" y="${legY+4}" font-size="8" fill="#888">50–69%</text>`;
+  svg += `<rect x="${lm+106}" y="${legY-6}" width="12" height="12" fill="#8a7000" rx="2" opacity=".8"/>`;
+  svg += `<text x="${lm+122}" y="${legY+4}" font-size="8" fill="#888">70–84%</text>`;
+  svg += `<line x1="${lm+178}" y1="${legY}" x2="${lm+194}" y2="${legY}" stroke="#d94f3d" stroke-width="1.5" stroke-dasharray="4,2"/>`;
+  svg += `<text x="${lm+198}" y="${legY+4}" font-size="8" fill="#d94f3d">Limiar clínico 85%</text>`;
+
+  svg += '</svg>';
+
+  document.getElementById('r-chart-wrap').style.display = '';
+  document.getElementById('r-chart').innerHTML = svg;
+}
+
+async function copyChart() {
+  const svgEl = document.getElementById('profile-svg');
+  if (!svgEl) return;
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob([svgData], { type: 'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+  img.onload = async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width  = svgEl.viewBox.baseVal.width  * 2;
+    canvas.height = svgEl.viewBox.baseVal.height * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(async blob2 => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({'image/png': blob2})]);
+        toast('✅ Gráfico copiado!');
+      } catch(e) {
+        // fallback: open in new tab
+        window.open(URL.createObjectURL(blob2));
+      }
+    }, 'image/png');
+  };
+  img.src = url;
 }
 
 /* ══════════════════════════════════════════════════════
