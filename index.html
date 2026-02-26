@@ -812,7 +812,7 @@ tr:last-child td { border-bottom:none; }
       <label class="diag-opt" id="diag-nd-lbl">
         <input type="radio" name="diag" value="ND" onchange="onDiagChange()">
         <div class="diag-main">
-          <span class="diag-name">Sem diagnóstico / 1ª avaliação</span>
+          <span class="diag-name">Sem diagnóstico / aplicação em investigação</span>
           <span class="diag-desc">Avaliação normativa ou contexto de investigação</span>
         </div>
       </label>
@@ -1702,45 +1702,44 @@ function finish() {
       const zActStr  = zA_act  !== null ? ` (z = ${zA_act.toFixed(1)})`  : '';
 
       if (actLow && passLow) {
-        // Both low — general or task comprehension issue
-        note2A = `A criança obteve ${pctAtiva}%${zActStr} nas frases ativas e ${pctPassiva}%${zPassStr} nas passivas. ` +
-          `O facto de o desempenho ser baixo tanto nas frases canónicas (ativas) como nas não-canónicas (passivas) sugere que as dificuldades ` +
-          `podem não ser especificamente sintáticas: poderão reflectir dificuldades de compreensão mais gerais, dificuldades atencionais, ` +
-          `ou dificuldades na interpretação da tarefa de escolha de imagem. ` +
+        note2A = `O desempenho foi baixo tanto nas frases ativas (${pctAtiva}%${zActStr}) como nas frases passivas longas (${pctPassiva}%${zPassStr}). ` +
+          `Quando o desempenho é baixo nos dois tipos de frases, é menos provável que se trate de uma dificuldade específica com a estrutura passiva — ` +
+          `podem estar em causa dificuldades de compreensão mais gerais, dificuldades de atenção, ` +
+          `ou dificuldades em interpretar a tarefa de selecção de imagem. ` +
           (canC
-            ? `Os dados normativos do TACCSi indicam que crianças de ${NORMS[ng].label} obtêm tipicamente ${Math.round(NORMS[ng].sub.Active.M*100)}% nas ativas e ${Math.round(NORMS[ng].sub.Passive.M*100)}% nas passivas. ` +
-              `Recomenda-se avaliar a compreensão de frases simples e observar se as dificuldades se generalizam a outras tarefas de compreensão.`
+            ? `Para a faixa etária desta criança (${NORMS[ng].label}), o desempenho esperado situa-se em torno de ${Math.round(NORMS[ng].sub.Active.M*100)}% nas frases ativas e ${Math.round(NORMS[ng].sub.Passive.M*100)}% nas frases passivas. ` +
+              `Recomenda-se avaliar a compreensão de frases simples e observar se as dificuldades se estendem a outras tarefas.`
             : younger
-              ? `A investigação em PE mostra que crianças de 5 anos com DT apresentam ~90% de acerto em passivas eventivas (Estrela, 2014; Agostinho, 2020). ` +
-                `Para crianças desta faixa etária, dificuldades com as frases ativas são incomuns e merecem atenção. ` +
+              ? `A título de referência, estudos em Português Europeu mostram que crianças de 5 anos com desenvolvimento típico obtêm cerca de 90% nas frases passivas longas com verbos de acção (Estrela, 2014; Agostinho, 2020). ` +
+                `Dificuldades nas frases ativas nesta faixa etária são pouco comuns e merecem atenção. ` +
                 `Recomenda-se avaliar a compreensão de frases simples para clarificar o perfil.`
-              : `Para crianças desta idade (> 6;10), dificuldades persistentes em ambos os tipos de frases são clinicamente relevantes e justificam avaliação aprofundada.`);
+              : `Para uma criança desta idade, dificuldades nas frases ativas e passivas em simultâneo são clinicamente relevantes e justificam uma avaliação mais aprofundada.`);
 
       } else if (!actLow && passLow) {
-        // Classic asymmetry — canonical/non-canonical
-        note2A = `A criança demonstra a assimetria canónico/não-canónico esperada em contexto de dificuldade sintática: ` +
-          `${pctAtiva}%${zActStr} nas frases ativas (canónicas) contrasta com ${pctPassiva}%${zPassStr} nas passivas. ` +
-          `A estrutura passiva inverte a ordem temática básica Agente–Verbo–Tema do Português Europeu (língua SVO), ` +
-          `colocando o tema/paciente em posição de sujeito. Crianças que processam frases com base na estratégia de ordem canónica ` +
-          `tendem a interpretar incorrectamente as passivas, atribuindo o papel de agente ao NP inicial. ` +
+        note2A = `O desempenho foi claramente melhor nas frases ativas (${pctAtiva}%${zActStr}) do que nas frases passivas longas (${pctPassiva}%${zPassStr}). ` +
+          `O Português Europeu é uma língua de ordem básica SVO — nas frases ativas, o argumento agente precede o argumento tema. ` +
+          `Nas frases passivas longas, é o argumento tema que ocupa a posição de sujeito, precedendo o argumento agente introduzido pelo sintagma preposicional. ` +
+          `Esta inversão da ordem argumental tende a dificultar a compreensão, em especial quando a criança usa estratégias de interpretação baseadas na ordem canónica. ` +
           (canC
-            ? `Comparando com os dados normativos (${NORMS[ng].label}), o desempenho nas passivas está ${zA_pass < -2 ? 'marcadamente' : ''} abaixo do esperado (z = ${zA_pass.toFixed(1)}; M normativo = ${Math.round(NORMS[ng].sub.Passive.M*100)}%). ` +
-              `A investigação em PE documenta que crianças com PDL apresentam dificuldades específicas em passivas eventivas long (Costa, 2024; Montgomery & Evans, 2009). ` +
-              `${zA_pass < -2 ? 'O z-score indica dificuldades marcadas que reforçam a necessidade de avaliação abrangente.' : 'Recomenda-se integrar com o perfil das relativas e interrogativas para uma leitura convergente.'}`
+            ? `O desempenho nas frases passivas está ${zA_pass < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
+              `(z = ${zA_pass.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.Passive.M*100)}% para ${NORMS[ng].label}). ` +
+              `Dificuldades com frases passivas longas com verbos de acção são descritas na literatura como um marcador frequente em crianças com perturbação do desenvolvimento da linguagem (Costa, 2024; Montgomery & Evans, 2009). ` +
+              `${zA_pass < -2 ? 'O resultado aponta para a necessidade de uma avaliação de linguagem mais abrangente.' : 'Recomenda-se integrar com o desempenho nas relativas e interrogativas de objeto para uma leitura de conjunto.'}`
             : younger
-              ? `A investigação em PE documenta que crianças com DT aos 5 anos atingem ~90% de acerto em passivas eventivas (Estrela, 2014; Agostinho, 2020). ` +
-                `Este valor serve de referência descritiva — os dados normativos do TACCSi não cobrem esta faixa etária. ` +
-                `A assimetria observada é consistente com dificuldades sintáticas, mas deve ser interpretada com cautela dado que a aquisição das passivas ainda está em curso nesta idade.`
-              : `A investigação mostra que crianças com DT de 8-11 anos atingem 97.5% nas passivas eventivas, e crianças com PDL ou ASD+PDL da mesma faixa podem ficar nos 72-73% (Costa, 2024). ` +
-                `Para uma criança desta idade, um desempenho baixo nas passivas com bom desempenho nas ativas é clinicamente significativo ` +
-                `e sugere dificuldades persistentes no processamento de estruturas com inversão temática.`);
+              ? `A título de referência, estudos em Português Europeu mostram que crianças de 5 anos com desenvolvimento típico obtêm cerca de 90% nas frases passivas longas com verbos de acção (Estrela, 2014; Agostinho, 2020). ` +
+                `Os dados normativos do TACCSi não cobrem esta faixa etária, pelo que este valor serve apenas de referência descritiva. ` +
+                `A assimetria entre frases ativas e passivas observada é consistente com dificuldades sintáticas, mas deve ser interpretada com cuidado dado que a aquisição das passivas ainda está em curso nesta idade.`
+              : `A título de referência, estudos em Português Europeu mostram que crianças com desenvolvimento típico de 8 anos atingem cerca de 97% nas frases passivas longas com verbos de acção, ` +
+                `enquanto crianças com perturbação da linguagem da mesma faixa etária ficam frequentemente abaixo dos 75% (Costa, 2024). ` +
+                `Dificuldades persistentes com frases passivas nesta idade têm relevância clínica acrescida, ` +
+                `uma vez que o período de aquisição típica desta estrutura já terá sido ultrapassado.`);
 
       } else {
-        // Ativas low, passivas OK — atypical
-        note2A = `O padrão observado é atípico: o desempenho nas passivas (${pctPassiva}%${zPassStr}) é superior ao das frases ativas (${pctAtiva}%${zActStr}). ` +
-          `Em circunstâncias normais, as frases ativas são mais fáceis por preservarem a ordem canónica Agente–Verbo–Tema. ` +
-          `Este padrão pode reflectir dificuldades de atenção, de compreensão da tarefa, ou estratégias de resposta não-linguísticas. ` +
-          `Recomenda-se reavaliar com atenção ao comportamento durante a tarefa.`;
+        note2A = `O desempenho nas frases passivas longas (${pctPassiva}%${zPassStr}) foi superior ao das frases ativas (${pctAtiva}%${zActStr}), o que é um padrão inesperado. ` +
+          `As frases ativas preservam a ordem básica SVO do Português Europeu e são geralmente mais fáceis de compreender. ` +
+          `Este resultado pode reflectir dificuldades de atenção, dificuldade em interpretar a tarefa de selecção de imagem, ` +
+          `ou uma estratégia de resposta não dependente do conteúdo linguístico. ` +
+          `Recomenda-se observar o comportamento durante a tarefa e considerar reaplicação.`;
       }
     }
 
@@ -1766,39 +1765,38 @@ function finish() {
       const zROStr = zRO_sc !== null ? ` (z = ${zRO_sc.toFixed(1)})` : '';
 
       if (rsLow && roLow) {
-        noteRel = `A criança apresenta dificuldades tanto nas relativas de sujeito (${pctRS}%${zRSStr}) como nas de objeto (${pctRO}%${zROStr}). ` +
-          `As relativas de sujeito preservam a ordem canónica dentro da estrutura encaixada e são geralmente adquiridas cedo — ` +
-          `a literatura descreve ~98% de acerto em crianças DT de 5 anos (Costa, Lobo & Silva, 2011). ` +
-          `Dificuldades nas relativas de sujeito sugerem que as dificuldades podem ter uma base mais ampla ` +
-          `do que a sensibilidade específica ao efeito de intervenção, e merecem avaliação aprofundada da compreensão de frases complexas. ` +
+        noteRel = `O desempenho foi baixo tanto nas relativas de sujeito (${pctRS}%${zRSStr}) como nas relativas de objeto (${pctRO}%${zROStr}). ` +
+          `As relativas de sujeito preservam a ordem básica SVO dentro da oração relativa — o argumento agente precede o argumento tema — ` +
+          `e estudos em Português Europeu mostram que crianças com desenvolvimento típico de 5 anos acertam cerca de 98% destas frases (Costa, Lobo & Silva, 2011). ` +
+          `Dificuldades também nas relativas de sujeito sugerem que o problema pode ir além da sensibilidade à inversão da ordem argumental, ` +
+          `podendo reflectir dificuldades mais gerais na compreensão de frases sintacticamente complexas. ` +
           (canC
-            ? `Os z-scores obtidos (RS: ${zRSStr.trim()}, RO: ${zROStr.trim()}) confirmam que o desempenho está abaixo do esperado para o grupo normativo (${NORMS[ng].label}).`
+            ? `O desempenho em ambos os tipos de relativas está abaixo do esperado para a faixa etária desta criança (${NORMS[ng].label}). Recomenda-se avaliação de linguagem mais abrangente.`
             : older
-              ? `Para uma criança desta idade, dificuldades nas relativas de sujeito são particularmente significativas e justificam avaliação urgente.`
-              : '');
+              ? `Para uma criança desta idade, dificuldades nas relativas de sujeito são clinicamente significativas e justificam avaliação aprofundada.`
+              : `Recomenda-se avaliar a compreensão de frases complexas noutros contextos para confirmar o perfil.`);
 
       } else if (!rsLow && roLow) {
-        // Classic asymmetry RS>>RO — intervention effect
-        noteRel = `O perfil observado — ${pctRS}%${zRSStr} nas relativas de sujeito e ${pctRO}%${zROStr} nas de objeto — ` +
-          `é consistente com o efeito de intervenção sintática documentado extensivamente na literatura. ` +
-          `Nas relativas de objeto, o núcleo nominal é movido para posição periférica esquerda, ` +
-          `ficando o sujeito da relativa a intervir entre o elemento deslocado e a sua posição de base — ` +
-          `uma configuração não-canónica que impõe custo elevado de processamento. ` +
-          `Em PE, crianças DT de 5 anos obtêm ~98% nas RS mas apenas ~68% nas RO (Costa, Lobo & Silva, 2011). ` +
+        noteRel = `O desempenho foi claramente melhor nas relativas de sujeito (${pctRS}%${zRSStr}) do que nas relativas de objeto (${pctRO}%${zROStr}), ` +
+          `reflectindo a assimetria sujeito/objeto documentada extensivamente na literatura. ` +
+          `Nas relativas de sujeito, o argumento agente precede o argumento tema — a ordem básica SVO do Português Europeu. ` +
+          `Nas relativas de objeto, é o argumento tema que precede o argumento agente, o que implica a inversão da ordem argumental canónica ` +
+          `e dá origem a um efeito de intervenção: o sujeito da relativa intervém entre o elemento deslocado e a sua posição de base, ` +
+          `tornando a interpretação mais exigente (Costa, Lobo & Silva, 2011; Martins, 2022). ` +
           (canC
-            ? `Comparando com os dados normativos do TACCSi (${NORMS[ng].label}): M nas RO = ${Math.round(NORMS[ng].sub.RelObj.M*100)}%. ` +
-              `O z-score de ${zRO_sc.toFixed(1)} indica que o desempenho está ${zRO_sc < -2 ? 'marcadamente (>2 DP)' : ''} abaixo da média normativa. ` +
-              `Crianças com PDL em PE mantêm ~98% nas RS mas apresentam apenas ~55% nas RO, mesmo em idades mais avançadas (Martins, 2022). ` +
-              `${zRO_sc < -2 ? 'Este resultado reforça a necessidade de avaliação clínica abrangente.' : 'A integração com o perfil das interrogativas de objeto permitirá uma leitura mais completa.'}`
+            ? `O desempenho nas relativas de objeto está ${zRO_sc < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
+              `(z = ${zRO_sc.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.RelObj.M*100)}% para ${NORMS[ng].label}). ` +
+              `A título de referência, estudos em Português Europeu mostram que crianças com perturbação do desenvolvimento da linguagem de 8-11 anos ` +
+              `mantêm cerca de 98% nas relativas de sujeito mas ficam nos 55% nas relativas de objeto (Martins, 2022). ` +
+              `${zRO_sc < -2 ? 'O resultado aponta para a necessidade de avaliação de linguagem mais abrangente.' : 'Recomenda-se comparar com o desempenho nas interrogativas-Qu de objeto para uma leitura de conjunto.'}`
             : younger
-              ? `Para crianças desta faixa etária (< 5;4), os dados normativos do TACCSi não estão disponíveis. ` +
-                `A literatura descreve ~64% de acerto nas RO em crianças DT de 5-7 anos (Martins, 2022), servindo de referência descritiva. ` +
-                `A assimetria RS/RO observada é o padrão esperado em dificuldades sintáticas, ` +
-                `mas deve ser interpretada com cautela dado que a aquisição das RO está ainda em curso nesta faixa etária.`
-              : `Para crianças desta idade (> 6;10), a literatura documenta ~95% de acerto nas RO em DT de 8-11 anos, ` +
-                `enquanto crianças com PDL e ASD+PDL da mesma faixa ficam nos 52-55% (Martins, 2022). ` +
-                `Um desempenho baixo nas RO nesta idade é clinicamente mais significativo do que em criança pré-escolar, ` +
-                `pois a janela de aquisição típica já terá sido ultrapassada.`);
+              ? `Os dados normativos do TACCSi não cobrem esta faixa etária. ` +
+                `A título de referência, estudos mostram que crianças com desenvolvimento típico de 5-7 anos obtêm cerca de 64% nas relativas de objeto (Martins, 2022). ` +
+                `A assimetria sujeito/objeto observada é consistente com dificuldades sintáticas, ` +
+                `mas deve ser interpretada com cuidado dado que a aquisição das relativas de objeto ainda está em curso nesta faixa etária.`
+              : `A título de referência, crianças com desenvolvimento típico de 8-11 anos atingem cerca de 95% nas relativas de objeto, ` +
+                `enquanto crianças com perturbação da linguagem da mesma faixa etária ficam frequentemente nos 52-55% (Martins, 2022). ` +
+                `Dificuldades persistentes com as relativas de objeto nesta idade têm relevância clínica acrescida.`);
       }
     }
 
@@ -1825,34 +1823,38 @@ function finish() {
       const convSignal = roLow && ioLow;
 
       if (isLow && ioLow) {
-        noteInt = `A criança apresenta dificuldades tanto nas interrogativas de sujeito (${pctIS}%${zISStr}) como nas de objeto (${pctIO}%${zIOStr}). ` +
-          `As interrogativas-Q de sujeito (IS) são estruturalmente simples e preservam a ordem argumental básica — ` +
-          `a literatura documenta ~97% de acerto em crianças DT de 5 anos (Cerejeira, 2009; Baião & Lobo, 2014). ` +
-          `Dificuldades nas IS sugerem que as dificuldades podem ter raiz em níveis anteriores ao processo de extracção-Q, ` +
-          `nomeadamente dificuldades de compreensão de frases simples ou de processamento lexical. ` +
-          (canC ? `O perfil de z-scores (IS: ${zISStr.trim()}, IO: ${zIOStr.trim()}) confirma dificuldades abaixo do esperado para o grupo normativo.` : '');
+        noteInt = `O desempenho foi baixo tanto nas interrogativas-Qu de sujeito (${pctIS}%${zISStr}) como nas interrogativas-Qu de objeto (${pctIO}%${zIOStr}). ` +
+          `As interrogativas-Qu de sujeito preservam a ordem básica SVO e são geralmente fáceis — ` +
+          `estudos em Português Europeu mostram cerca de 97% de acerto em crianças com desenvolvimento típico de 5 anos (Cerejeira, 2009; Baião & Lobo, 2014). ` +
+          `Dificuldades também nas interrogativas-Qu de sujeito sugerem que o problema pode não ser específico à inversão da ordem argumental ` +
+          `e pode reflectir dificuldades mais gerais na compreensão ou no processamento da tarefa. ` +
+          (canC ? `O desempenho em ambos os tipos de interrogativas está abaixo do esperado para a faixa etária desta criança (${NORMS[ng].label}).` : '');
 
       } else if (!isLow && ioLow) {
-        noteInt = `O perfil observado — ${pctIS}%${zISStr} nas interrogativas de sujeito e ${pctIO}%${zIOStr} nas de objeto — ` +
-          `reproduz o padrão de intervenção descrito para as relativas de objeto. ` +
-          `Nas interrogativas-Q de objeto, o constituinte-Q com restrição lexical desloca-se por sobre o sujeito pleno, ` +
-          `criando uma configuração de intervenção que dificulta a interpretação. ` +
-          `A investigação em PE documenta ~97% nas IS e apenas ~69% nas IO em crianças DT de 5 anos (Cerejeira, 2009; Baião & Lobo, 2014). ` +
+        noteInt = `O desempenho foi claramente melhor nas interrogativas-Qu de sujeito (${pctIS}%${zISStr}) do que nas interrogativas-Qu de objeto (${pctIO}%${zIOStr}), ` +
+          `reproduzindo a assimetria sujeito/objeto observada nas relativas. ` +
+          `As interrogativas-Qu de objeto com restrição lexical envolvem o deslocamento do argumento tema para posição periférica esquerda, ` +
+          `com o argumento agente a intervir entre o constituinte-Qu e a sua posição de base — ` +
+          `o mesmo efeito de intervenção descrito para as relativas de objeto (Costa, Lobo & Silva, 2011; Cerejeira, 2009; Baião & Lobo, 2014). ` +
+          `Estudos em Português Europeu mostram cerca de 97% nas interrogativas-Qu de sujeito e apenas 69% nas de objeto em crianças com desenvolvimento típico de 5 anos. ` +
           (canC
-            ? `O z-score nas IO (${zIO_sc.toFixed(1)}) indica desempenho ${zIO_sc < -2 ? 'marcadamente' : ''} abaixo da média normativa (M = ${Math.round(NORMS[ng].sub.WhQObj.M*100)}% para ${NORMS[ng].label}). ` +
-              `Crianças com PDL em PE de 8-11 anos obtêm ~61% nas IO (Martins, 2022). ` +
+            ? `O desempenho nas interrogativas-Qu de objeto está ${zIO_sc < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
+              `(z = ${zIO_sc.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.WhQObj.M*100)}% para ${NORMS[ng].label}). ` +
+              `A título de referência, crianças com perturbação do desenvolvimento da linguagem em Português Europeu de 8-11 anos obtêm cerca de 61% nestas interrogativas (Martins, 2022). ` +
               (convSignal
-                ? `⚠ A convergência de dificuldades nas RO e nas IO — duas estruturas que partilham o mecanismo de intervenção sintática — constitui um sinal clínico robusto que justifica avaliação de linguagem abrangente.`
-                : `A integração com o perfil das relativas permite estimar se as dificuldades são consistentes com o efeito de intervenção.`)
+                ? `⚠ O desempenho abaixo do esperado tanto nas relativas de objeto como nas interrogativas-Qu de objeto — dois tipos de frases que partilham o efeito de intervenção e a inversão da ordem argumental agente/tema — constitui um sinal clínico consistente que justifica uma avaliação de linguagem mais abrangente.`
+                : `Recomenda-se integrar com o desempenho nas relativas de objeto para uma leitura de conjunto do perfil sintático.`)
             : younger
-              ? `Para esta faixa etária, a literatura descreve ~61% nas IO em crianças DT de 5-7 anos (Martins, 2022), servindo de referência descritiva. ` +
+              ? `Os dados normativos do TACCSi não cobrem esta faixa etária. ` +
+                `A título de referência, crianças com desenvolvimento típico de 5-7 anos obtêm cerca de 61% nestas interrogativas (Martins, 2022). ` +
                 (convSignal
-                  ? `A presença de dificuldades em ambas as estruturas de extracção de objeto (RO e IO) é consistente com dificuldades no processamento de estruturas com intervenção sintática, mesmo sem dados normativos disponíveis para esta idade.`
-                  : `A assimetria IS/IO observada é teoricamente esperada, mas a sua interpretação clínica deve ser cautelosa nesta faixa etária.`)
-              : `Para crianças desta idade, a literatura documenta ~95% nas IO em DT de 8-11 anos, e 57-61% em PDL e ASD+PDL da mesma faixa (Martins, 2022). ` +
+                  ? `A assimetria sujeito/objeto observada tanto nas relativas como nas interrogativas é consistente com dificuldades no processamento de frases com inversão da ordem argumental, mesmo sem normas disponíveis para esta faixa etária.`
+                  : `A assimetria sujeito/objeto observada é consistente com dificuldades sintáticas, mas deve ser interpretada com cuidado nesta faixa etária.`)
+              : `A título de referência, crianças com desenvolvimento típico de 8-11 anos atingem cerca de 95% nestas interrogativas, ` +
+                `enquanto crianças com perturbação da linguagem da mesma faixa etária ficam frequentemente nos 57-61% (Martins, 2022). ` +
                 (convSignal
-                  ? `⚠ A convergência de dificuldades nas RO e nas IO nesta idade é clinicamente muito significativa: indica que as dificuldades com estruturas de intervenção são persistentes e provavelmente não representam apenas um atraso de desenvolvimento.`
-                  : `Dificuldades persistentes nas IO nesta idade justificam avaliação aprofundada.`));
+                  ? `⚠ A assimetria sujeito/objeto persistente tanto nas relativas como nas interrogativas-Qu de objeto nesta idade indica dificuldades com frases que envolvem o efeito de intervenção — um padrão que, nesta faixa etária, não pode ser atribuído apenas a imaturidade desenvolvimental.`
+                  : `Dificuldades persistentes com estas interrogativas nesta idade têm relevância clínica acrescida.`));
       }
     }
 
@@ -1882,60 +1884,52 @@ function finish() {
     const zGramStr = zGram   !== null ? ` (z = ${zGram.toFixed(1)})`   : '';
 
     // Preamble: what the task requires
-    const taskPreamble = `A tarefa de julgamento de gramaticalidade avalia conhecimento sintático implícito sem exigir metalinguagem explícita — ` +
-      `a criança indica apenas se a frase "soa bem" ou não. ` +
-      `Segundo Simard, Labelle & Bergeron (2017), este nível de consciência sintática é adequado para a faixa pré-escolar. ` +
-      `A investigação em PE indica que as crianças são geralmente mais sensíveis a violações de concordância do que a violações de ordem (Loureiro, 2008; Perdigão, 2015). `;
+    const taskPreamble = `Nesta tarefa, a criança indica se cada frase "soa bem" ou não, sem necessidade de explicar porquê — ` +
+      `um nível de consciência sintática que não requer metalinguagem explícita e é adequado para a faixa pré-escolar (Simard, Labelle & Bergeron, 2017). ` +
+      `Estudos em Português Europeu mostram que as crianças pré-escolares são geralmente mais sensíveis a violações de concordância do que a violações de ordem de palavras (Loureiro, 2008; Perdigão, 2015). `;
 
     if (gramLow && concLow && ordLow) {
-      // All three low
       note2C = taskPreamble +
-        `A criança apresenta dificuldades generalizadas: frases gramaticais aceites em ${pctGram}%${zGramStr}, ` +
-        `violações de concordância detectadas em ${pctConc}%${zConcStr}, e violações de ordem em ${pctOrd}%${zOrdStr}. ` +
-        `Um desempenho baixo em todas as sub-tarefas pode reflectir dificuldade em compreender a natureza da tarefa de julgamento, ` +
-        `dificuldades atencionais, ou dificuldades generalizadas ao nível da consciência metalinguística. ` +
-        `Importa integrar com o perfil de compreensão e com a observação clínica durante a avaliação.`;
+        `O desempenho foi baixo nas três componentes: frases corretas aceites em ${pctGram}%${zGramStr}, ` +
+        `erros de concordância detectados em ${pctConc}%${zConcStr}, e erros de ordem em ${pctOrd}%${zOrdStr}. ` +
+        `Quando o desempenho é baixo em todos os tipos de julgamento, é possível que as dificuldades não sejam específicas à consciência sintática — ` +
+        `podem estar em causa dificuldades de atenção, de compreensão da tarefa ou um nível mais geral de dificuldade metalinguística. ` +
+        `Importa integrar com o perfil de compreensão e com a observação do comportamento durante a avaliação.`;
 
     } else if (!concLow && ordLow) {
-      // Typical pattern: agreement OK, word order low
       note2C = taskPreamble +
-        `O perfil observado — melhor detecção de violações de concordância (${pctConc}%${zConcStr}) do que de violações de ordem (${pctOrd}%${zOrdStr}) — ` +
-        `é consistente com o padrão descrito na literatura para crianças pré-escolares com desenvolvimento típico. ` +
-        `Perdigão (2015) demonstrou que crianças de 5 anos identificam melhor violações de concordância do que violações de ordem de palavras, ` +
-        `com a sensibilidade à ordem a desenvolver-se progressivamente ao longo da escolaridade. ` +
+        `O desempenho foi melhor na detecção de erros de concordância (${pctConc}%${zConcStr}) do que na de erros de ordem de palavras (${pctOrd}%${zOrdStr}). ` +
+        `Este padrão é o esperado para crianças em idade pré-escolar — a sensibilidade a erros de ordem de palavras desenvolve-se mais tarde do que a sensibilidade a erros de concordância, ` +
+        `e continua a melhorar ao longo dos primeiros anos de escolaridade (Perdigão, 2015). ` +
         (canC
-          ? `O z-score nas violações de concordância (${zConc?.toFixed(1) ?? 'N/A'}) sugere que essa componente está ${!concLow ? 'dentro do esperado' : 'abaixo do esperado'}, ` +
-            `enquanto as violações de ordem estão marcadamente abaixo (z = ${zOrd_sc?.toFixed(1)}; M normativo = ${Math.round(NORMS[ng].sub.AgrOrder.M*100)}%). ` +
-            `Este padrão pode reflectir uma fase de aquisição ainda em curso para a detecção de problemas de ordem, sendo recomendável monitorização longitudinal.`
-          : `Para esta faixa etária, este padrão é esperado do ponto de vista desenvolvimental e não constitui, por si só, um sinal de alarme. Recomenda-se monitorização.`);
+          ? `O desempenho na concordância está dentro do esperado para a faixa etária, ` +
+            `enquanto a detecção de erros de ordem está abaixo (z = ${zOrd_sc?.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.AgrOrder.M*100)}% para ${NORMS[ng].label}). ` +
+            `Este resultado pode reflectir uma fase de desenvolvimento ainda em curso e recomenda-se monitorização ao longo do tempo.`
+          : `Para esta faixa etária este padrão não constitui, por si só, um sinal de alarme. Recomenda-se monitorização.`);
 
     } else if (concLow && !ordLow) {
-      // Atypical: order OK, agreement low
       note2C = taskPreamble +
-        `O padrão observado é atípico: melhor detecção de violações de ordem (${pctOrd}%${zOrdStr}) do que de violações de concordância (${pctConc}%${zConcStr}). ` +
-        `A investigação em PE indica sistematicamente o padrão inverso — as violações de concordância são detectadas com maior facilidade do que as de ordem (Loureiro, 2008; Perdigão, 2015). ` +
-        `Dificuldades específicas na detecção de erros de concordância podem sugerir fragilidades morfossintáticas ao nível do processamento do acordo gramatical, ` +
-        `e merecem atenção clínica, especialmente se acompanhadas de dificuldades na produção de morfologia de concordância.`;
+        `O desempenho foi melhor na detecção de erros de ordem de palavras (${pctOrd}%${zOrdStr}) do que na de erros de concordância (${pctConc}%${zConcStr}). ` +
+        `Este padrão é o inverso do que é habitual: estudos em Português Europeu mostram consistentemente que as crianças detectam mais facilmente erros de concordância do que erros de ordem (Loureiro, 2008; Perdigão, 2015). ` +
+        `Dificuldades específicas na detecção de erros de concordância podem sugerir fragilidades na sensibilidade à morfologia de concordância, ` +
+        `e merecem atenção, em especial se acompanhadas de erros de concordância na produção oral.`;
 
     } else if (concLow && ordLow) {
-      // Both agrammatical types low
       note2C = taskPreamble +
-        `A criança apresenta dificuldades na detecção de ambos os tipos de violação: ` +
-        `concordância em ${pctConc}%${zConcStr} e ordem de palavras em ${pctOrd}%${zOrdStr}. ` +
+        `O desempenho foi baixo na detecção de erros de concordância (${pctConc}%${zConcStr}) e de erros de ordem de palavras (${pctOrd}%${zOrdStr}). ` +
         (gramLow
-          ? `A dificuldade em aceitar frases gramaticais (${pctGram}%${zGramStr}) reforça a hipótese de uma dificuldade mais geral na tarefa de julgamento. `
-          : `O facto de aceitar correctamente as frases gramaticais (${pctGram}%) indica que a criança compreende a lógica da tarefa, ` +
-            `mas tem dificuldades em identificar violações específicas. `) +
+          ? `O desempenho baixo também na aceitação de frases corretas (${pctGram}%${zGramStr}) reforça a possibilidade de uma dificuldade mais geral na tarefa de julgamento. `
+          : `O facto de as frases corretas terem sido aceites com bom desempenho (${pctGram}%) indica que a criança compreendeu a tarefa, ` +
+            `mas teve dificuldade em identificar os erros específicos. `) +
         (canC
-          ? `Os z-scores obtidos (concordância: ${zConc?.toFixed(1)}, ordem: ${zOrd_sc?.toFixed(1)}) indicam que o desempenho está abaixo do esperado para o grupo normativo (${NORMS[ng].label}). `
+          ? `O desempenho em ambos os tipos de erros está abaixo do esperado para a faixa etária desta criança (concordância: z = ${zConc?.toFixed(1)}, ordem: z = ${zOrd_sc?.toFixed(1)}, grupo ${NORMS[ng].label}). `
           : '') +
-        `Recomenda-se integrar estes resultados com o perfil de compreensão sintática e com observação clínica das produções da criança.`;
+        `Recomenda-se integrar com o perfil de compreensão e com a observação das produções orais.`;
 
     } else if (gramLow && !concLow && !ordLow) {
-      // Can accept ungrammatical but rejects grammatical — interesting
       note2C = taskPreamble +
-        `A criança tende a não aceitar frases gramaticais (${pctGram}%${zGramStr}), apesar de apresentar melhor detecção de violações. ` +
-        `Este padrão pode reflectir uma estratégia de resposta conservadora ou dificuldades na distinção perceptiva entre frases correctas e incorrectas. ` +
+        `A criança detectou os erros com razoável desempenho mas tendeu a não aceitar as frases corretas (${pctGram}%${zGramStr}). ` +
+        `Este padrão pode reflectir uma estratégia de resposta cautelosa, ou dificuldade em distinguir frases corretas de incorrectas. ` +
         `Recomenda-se observar o comportamento durante a tarefa e verificar se a criança compreendeu as instruções.`;
     }
 
