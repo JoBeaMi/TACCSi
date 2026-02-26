@@ -695,7 +695,7 @@ tr:last-child td { border-bottom:none; }
         <input id="fdob" type="date" onchange="calcAge()"></div>
       <div class="fg"><label>Idade calculada</label>
         <div class="age-dsp" id="adsp">—</div></div>
-      <div class="fg"><label>Sexo</label>
+      <div class="fg"><label>Sexo <span class="req">*</span></label>
         <select id="fsx"><option value="">— Selecionar —</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
       </div>
       <div class="fg"><label>Escola / Instituição <span class="req">*</span></label>
@@ -719,7 +719,7 @@ tr:last-child td { border-bottom:none; }
         <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
     </div>
 
-    <div class="s-sec" style="margin-top:22px">Diagnóstico clínico <span class="req-note">selecionar um (opcional)</span></div>
+    <div class="s-sec" style="margin-top:22px">Diagnóstico clínico <span class="req">*</span> <span class="req-note">selecione:</span></div>
     <div class="diag-wrap">
 
       <label class="diag-opt" id="diag-pdl-lbl">
@@ -807,7 +807,7 @@ tr:last-child td { border-bottom:none; }
       <label class="diag-opt" id="diag-nd-lbl">
         <input type="radio" name="diag" value="ND" onchange="onDiagChange()">
         <div class="diag-main">
-          <span class="diag-name">Sem diagnóstico / 1º avaliação</span>
+          <span class="diag-name">Sem diagnóstico / 1ª avaliação</span>
           <span class="diag-desc">Avaliação normativa ou contexto de investigação</span>
         </div>
       </label>
@@ -1224,12 +1224,16 @@ function startSession() {
   const sch = document.getElementById('fsch').value.trim();
   const ex  = document.getElementById('fex').value.trim();
   const dt  = document.getElementById('fdt').value;
+  const diagSel = document.querySelector('input[name="diag"]:checked');
+  const sex = document.getElementById('fsx').value;
   const errs = [];
-  if (!nm)  errs.push('nome completo da criança');
-  if (!db)  errs.push('data de nascimento');
-  if (!sch) errs.push('escola / instituição');
-  if (!ex)  errs.push('terapeuta');
-  if (!dt)  errs.push('data da sessão');
+  if (!nm)      errs.push('nome completo da criança');
+  if (!db)      errs.push('data de nascimento');
+  if (!sch)     errs.push('escola / instituição');
+  if (!ex)      errs.push('terapeuta');
+  if (!dt)      errs.push('data da sessão');
+  if (!sex)     errs.push('sexo');
+  if (!diagSel) errs.push('diagnóstico clínico');
   if (errs.length) { toast('⚠ Preencha: ' + errs.join(', ')); return; }
   if (document.querySelector('input[name="diag"][value="BIO"]:checked')) {
     if (!document.getElementById('fbio')?.value.trim()) {
