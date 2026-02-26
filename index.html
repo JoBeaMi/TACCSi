@@ -1173,14 +1173,13 @@ function calcAge() {
   document.getElementById('adsp').textContent =
     `${Math.floor(m/12)};${String(m%12).padStart(2,'0')}  (${m} meses)`;
 
-  const ftkEl  = document.getElementById('ftk');
   const warnEl = document.getElementById('ftk-warn');
   if (m < 60) {
-    // Auto-select comp, show warning
-    ftkEl.value = 'comp';
-    if (warnEl) { warnEl.style.display = ''; }
+    warnEl.innerHTML = `⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos. ` +
+      `Pode administrar o protocolo completo se considerar clinicamente adequado.`;
+    warnEl.style.display = '';
   } else {
-    if (warnEl) { warnEl.style.display = 'none'; }
+    warnEl.style.display = 'none';
   }
 }
 
@@ -1717,8 +1716,10 @@ function finish() {
 
       } else if (!actLow && passLow) {
         note2A = `O desempenho foi claramente melhor nas frases ativas (${pctAtiva}%${zActStr}) do que nas frases passivas longas (${pctPassiva}%${zPassStr}). ` +
-          `O Português Europeu é uma língua de ordem básica SVO — nas frases ativas, o argumento agente precede o argumento tema. ` +
-          `Nas frases passivas longas, é o argumento tema que ocupa a posição de sujeito, precedendo o argumento agente introduzido pelo sintagma preposicional. ` +
+          `O Português Europeu é uma língua de ordem básica SVO — nas frases ativas, o argumento agente precede o argumento tema ` +
+          `(ex: "A mãe penteou a filha" — agente → tema). ` +
+          `Nas frases passivas longas, é o argumento tema que ocupa a posição de sujeito, precedendo o argumento agente introduzido pelo sintagma preposicional ` +
+          `(ex: "A filha foi penteada pela mãe" — tema → agente). ` +
           `Esta inversão da ordem argumental tende a dificultar a compreensão, em especial quando a criança usa estratégias de interpretação baseadas na ordem canónica. ` +
           (canC
             ? `O desempenho nas frases passivas está ${zA_pass < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
@@ -1779,8 +1780,10 @@ function finish() {
       } else if (!rsLow && roLow) {
         noteRel = `O desempenho foi claramente melhor nas relativas de sujeito (${pctRS}%${zRSStr}) do que nas relativas de objeto (${pctRO}%${zROStr}), ` +
           `reflectindo a assimetria sujeito/objeto documentada extensivamente na literatura. ` +
-          `Nas relativas de sujeito, o argumento agente precede o argumento tema — a ordem básica SVO do Português Europeu. ` +
+          `Nas relativas de sujeito, o argumento agente precede o argumento tema — a ordem básica SVO ` +
+          `(ex: "Mostra-me o menino que molhou o pai" — agente → tema). ` +
           `Nas relativas de objeto, é o argumento tema que precede o argumento agente, o que implica a inversão da ordem argumental canónica ` +
+          `(ex: "Mostra-me o menino que o pai molhou" — tema → agente) ` +
           `e dá origem a um efeito de intervenção: o sujeito da relativa intervém entre o elemento deslocado e a sua posição de base, ` +
           `tornando a interpretação mais exigente (Costa, Lobo & Silva, 2011; Martins, 2022). ` +
           (canC
@@ -1833,9 +1836,13 @@ function finish() {
       } else if (!isLow && ioLow) {
         noteInt = `O desempenho foi claramente melhor nas interrogativas-Qu de sujeito (${pctIS}%${zISStr}) do que nas interrogativas-Qu de objeto (${pctIO}%${zIOStr}), ` +
           `reproduzindo a assimetria sujeito/objeto observada nas relativas. ` +
-          `As interrogativas-Qu de objeto com restrição lexical envolvem o deslocamento do argumento tema para posição periférica esquerda, ` +
+          `Nas interrogativas-Qu de sujeito, o argumento agente está em posição frontal — a ordem esperada ` +
+          `(ex: "Que menina é que abraçou a mãe?" — agente → tema). ` +
+          `Nas interrogativas-Qu de objeto com restrição lexical, é o argumento tema que ocupa a posição frontal, ` +
           `com o argumento agente a intervir entre o constituinte-Qu e a sua posição de base — ` +
-          `o mesmo efeito de intervenção descrito para as relativas de objeto (Costa, Lobo & Silva, 2011; Cerejeira, 2009; Baião & Lobo, 2014). ` +
+          `o mesmo efeito de intervenção descrito para as relativas de objeto ` +
+          `(ex: "Que menina é que a mãe abraçou?" — tema → agente) ` +
+          `(Costa, Lobo & Silva, 2011; Cerejeira, 2009; Baião & Lobo, 2014). ` +
           `Estudos em Português Europeu mostram cerca de 97% nas interrogativas-Qu de sujeito e apenas 69% nas de objeto em crianças com desenvolvimento típico de 5 anos. ` +
           (canC
             ? `O desempenho nas interrogativas-Qu de objeto está ${zIO_sc < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
