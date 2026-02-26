@@ -720,7 +720,7 @@ tr:last-child td { border-bottom:none; }
       <label class="diag-opt" id="diag-nd-lbl">
         <input type="radio" name="diag" value="ND" onchange="onDiagChange()">
         <div class="diag-main">
-          <span class="diag-name">Sem diagnóstico / 1º avaliação</span>
+          <span class="diag-name">Sem diagnóstico / 1ª avaliação</span>
           <span class="diag-desc">Avaliação normativa ou contexto de investigação</span>
         </div>
       </label>
@@ -1702,7 +1702,9 @@ function finish() {
     tbody.appendChild(tr);
   });
 
-  sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all });
+  sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all,
+    s2aAtiva, s2aPassiva, s2bRS, s2bRO, s2bIS, s2bIO,
+    s2cGram, s2cConc, s2cOrd });
   } catch(e) {
     console.error('finish() error:', e);
     alert('Erro no relatório: ' + e.message + '\n' + e.stack?.split('\n')[1]);
@@ -1878,12 +1880,15 @@ async function copyChart() {
 /* ══════════════════════════════════════════════════════
    GOOGLE SHEETS
 ══════════════════════════════════════════════════════ */
-function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all }) {
+function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all,
+    s2aAtiva=0, s2aPassiva=0, s2bRS=0, s2bRO=0, s2bIS=0, s2bIO=0,
+    s2cGram=0, s2cConc=0, s2cOrd=0 }) {
   if (!SHEETS_URL) return;
-  const ss  = document.getElementById('sync-status');
+  const ss   = document.getElementById('sync-status');
   ss.innerHTML = '<span class="sync-badge wait">⏳ A guardar…</span>';
   const ng   = S.am <= 72 ? 'g1' : 'g2';
   const canC = S.tk === 'all' && S.am >= 64 && S.am <= 82;
+  const d    = S.diag || {};
   const itemCols = {};
   all.forEach(item => {
     const r = S.resp[item.kk];
@@ -1891,13 +1896,36 @@ function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all }) {
     itemCols[item.tk + '_' + item.n + '_correct'] = r ? (r.correct ? 1 : 0) : '';
   });
   const payload = {
-    timestamp: new Date().toISOString(), data: S.dt, terapeuta: S.ex,
-    crianca: S.name, dob: S.dob, idade_meses: S.am, sexo: S.sex,
-    escola: S.sch, tarefas: S.tk,
-    score_2A: s2a, score_2B: s2b, score_2C: s2c, score_total: tot, score_max: mx,
-    csc: canC ? csc(tot, NORMS[ng]) : '',
-    grupo_norm: canC ? NORMS[ng].label : '',
-    duracao_min: dur, observacoes: S.nt,
+    timestamp:    new Date().toISOString(),
+    data:         S.dt,
+    terapeuta:    S.ex,
+    crianca:      S.name,
+    dob:          S.dob,
+    idade_meses:  S.am,
+    sexo:         S.sex,
+    escola:       S.sch,
+    tarefas:      S.tk,
+    diagnostico:  d.label  || '',
+    cond_biomedica: d.bioCondition || '',
+    dominios:     (d.domains || []).join('; '),
+    score_2A:     s2a,
+    score_2A_ativas:   s2aAtiva,
+    score_2A_passivas: s2aPassiva,
+    score_2B:     s2b,
+    score_2B_RS:  s2bRS,
+    score_2B_RO:  s2bRO,
+    score_2B_IS:  s2bIS,
+    score_2B_IO:  s2bIO,
+    score_2C:     s2c,
+    score_2C_gramaticais:   s2cGram,
+    score_2C_concordancia:  s2cConc,
+    score_2C_ordem:         s2cOrd,
+    score_total:  tot,
+    score_max:    mx,
+    csc:          canC ? csc(tot, NORMS[ng]) : '',
+    grupo_norm:   canC ? NORMS[ng].label : '',
+    duracao_min:  dur,
+    observacoes:  S.nt,
     ...itemCols
   };
   fetch(SHEETS_URL, { method:'POST', mode:'no-cors',
@@ -1926,7 +1954,18 @@ function doCSV() {
   I2B.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2b',i.n)]?.correct) s2b++; });
   I2C.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2c',i.n)]?.correct) s2c++; });
   const canC = S.tk==='all' && S.am>=64 && S.am<=82, ng = S.am<=72?'g1':'g2';
-  out += `\n# Resumo\nCriança,${S.name}\nDOB,${S.dob}\nIdade_meses,${S.am}\nSexo,${S.sex}\nData,${S.dt}\nTerapeuta,${S.ex}\nTarefas,${S.tk}\nScore_2A,${s2a}\nScore_2B,${s2b}\nScore_2C,${s2c}\nScore_total,${s2a+s2b+s2c}\nDuracao_min,${(S.el/60).toFixed(1)}\n`;
+  // Sub-scores
+  let s2aAtiva=0,s2aPassiva=0,s2bRS=0,s2bRO=0,s2bIS=0,s2bIO=0,s2cGram=0,s2cConc=0,s2cOrd=0;
+  I2A.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2a',i.n)]?.correct){ if(i.t==='Ativa') s2aAtiva++; else s2aPassiva++; }});
+  I2B.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2b',i.n)]?.correct){ if(i.t==='RS') s2bRS++; else if(i.t==='RO') s2bRO++; else if(i.t==='IS') s2bIS++; else s2bIO++; }});
+  I2C.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2c',i.n)]?.correct){ if(i.sub==='Gram') s2cGram++; else if(i.sub==='Conc') s2cConc++; else s2cOrd++; }});
+  const d = S.diag || {};
+  out += `\n# Resumo\nCriança,${S.name}\nDOB,${S.dob}\nIdade_meses,${S.am}\nSexo,${S.sex}\nData,${S.dt}\nTerapeuta,${S.ex}\nEscola,${S.sch}\nTarefas,${S.tk}\n`;
+  out += `Diagnostico,"${d.label||''}"\nCondicao_biomedica,"${d.bioCondition||''}"\nDominios,"${(d.domains||[]).join('; ')}"\n`;
+  out += `Score_2A,${s2a}\nScore_2A_Ativas,${s2aAtiva}\nScore_2A_Passivas,${s2aPassiva}\n`;
+  out += `Score_2B,${s2b}\nScore_2B_RS,${s2bRS}\nScore_2B_RO,${s2bRO}\nScore_2B_IS,${s2bIS}\nScore_2B_IO,${s2bIO}\n`;
+  out += `Score_2C,${s2c}\nScore_2C_Gramaticais,${s2cGram}\nScore_2C_Concordancia,${s2cConc}\nScore_2C_Ordem,${s2cOrd}\n`;
+  out += `Score_total,${s2a+s2b+s2c}\nDuracao_min,${(S.el/60).toFixed(1)}\n`;
   if (canC) out += `CSC,${csc(s2a+s2b+s2c, NORMS[ng])}\nGrupo,${NORMS[ng].label}\n`;
   if (S.nt) out += `Obs,"${S.nt}"\n`;
   const a = document.createElement('a');
@@ -1941,8 +1980,11 @@ function doCSV() {
 ══════════════════════════════════════════════════════ */
 function newSession() {
   stopTimer();
-  S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false };
-  ['fnm','fdob','fsx','fsch','fex','fnt'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false };
+  ['fnm','fdob','fsx','fsch','fex','fnt','fbio'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  document.querySelectorAll('input[name="diag"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+  ['PDL','ETL','BIO','FRA'].forEach(d => { const w=document.getElementById('dom-'+d); if(w) w.classList.remove('active'); });
   document.getElementById('ftk').value = 'all';
   document.getElementById('adsp').textContent = '—';
   document.getElementById('fdt').value = new Date().toISOString().slice(0,10);
