@@ -714,6 +714,11 @@ tr:last-child td { border-bottom:none; }
           <option value="comp">2A + 2B apenas  (Compreensão)</option>
           <option value="aware">2C apenas  (Consciência)</option>
         </select>
+        <div id="ftk-warn" style="display:none;margin-top:6px;padding:8px 11px;background:#fff8e1;border:1px solid #f0c040;border-radius:7px;font-size:.78rem;color:#7a5c00;">
+          ⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos.
+          A seleção foi ajustada para <strong>Compreensão apenas</strong>.
+          Pode alterar manualmente se necessário.
+        </div>
       </div>
       <div class="fg fw"><label>Observações</label>
         <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
@@ -1167,6 +1172,16 @@ function calcAge() {
   S.am = m;
   document.getElementById('adsp').textContent =
     `${Math.floor(m/12)};${String(m%12).padStart(2,'0')}  (${m} meses)`;
+
+  const ftkEl  = document.getElementById('ftk');
+  const warnEl = document.getElementById('ftk-warn');
+  if (m < 60) {
+    // Auto-select comp, show warning
+    ftkEl.value = 'comp';
+    if (warnEl) { warnEl.style.display = ''; }
+  } else {
+    if (warnEl) { warnEl.style.display = 'none'; }
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1577,19 +1592,25 @@ function finish() {
   // ── Out-of-range notice ──
   const oorEl = document.getElementById('r-oor');
   if (outRange) {
-    const younger = S.am < 64;
     oorEl.style.display = '';
-    oorEl.innerHTML =
-      `📋 <strong>Perfil descritivo — sem dados normativos para esta idade</strong><br>` +
-      `Esta criança tem ${ageStr} anos (${S.am} meses), ` +
-      (younger
-        ? `abaixo da faixa normativa validada do TACCSi (5;4–6;10 anos). Não existem dados normativos para esta idade. `+
-          `O perfil por tarefa abaixo é clinicamente informativo: os itens de estrutura canónica — `+
-          `frases ativas (2A), relativas de sujeito e interrogativas de sujeito (2B) — `+
-          `avaliam bem crianças mais novas e permitem verificar se a criança domina a ordem básica `+
-          `antes de analisar as estruturas não-canónicas.`
-        : `acima da faixa normativa validada (5;4–6;10 anos). Não existem dados normativos para esta idade. `+
-          `O perfil descritivo mantém valor clínico para monitorização longitudinal.`);
+    const youngMsg = `<strong>📋 Nota metodológica — criança fora da faixa normativa validada (5;4–6;10 anos)</strong><br>` +
+      `Esta criança tem ${ageStr} anos (${S.am} meses). ` +
+      `Os dados normativos do TACCSi foram recolhidos com crianças entre 5;4 e 6;10 anos, pelo que não é possível calcular o Score Composto Padronizado (CSC) nem comparar com valores normativos do instrumento.<br><br>` +
+      `<strong>O que é possível interpretar:</strong> O perfil por estrutura abaixo tem valor clínico descritivo independente das normas. ` +
+      `A assimetria entre estruturas canónicas (ativas, RS, IS) e não-canónicas (passivas, RO, IO) é teoricamente motivada e clinicamente informativa a qualquer idade. ` +
+      `As notas de interpretação referem valores da literatura de aquisição do PE como referência descritiva — não como normas do instrumento.`;
+
+    const oldMsg = `<strong>📋 Nota metodológica — criança fora da faixa normativa validada (5;4–6;10 anos)</strong><br>` +
+      `Esta criança tem ${ageStr} anos (${S.am} meses). ` +
+      `Os dados normativos do TACCSi foram recolhidos com crianças entre 5;4 e 6;10 anos, pelo que não é possível calcular o Score Composto Padronizado (CSC).<br><br>` +
+      `<strong>O que é possível interpretar:</strong> O perfil por estrutura abaixo tem valor clínico descritivo. ` +
+      `Para crianças mais velhas, a literatura documenta que crianças DT de 8-11 anos atingem ~95% nas estruturas de extracção de objeto (RO e IO) — ` +
+      `significativamente acima dos valores dos grupos PDL e ASD+PDL da mesma faixa (~52-61%). ` +
+      `Dificuldades nestas estruturas em crianças desta idade são clinicamente mais significativas do que em crianças pré-escolares, ` +
+      `uma vez que a janela de aquisição típica já terá sido ultrapassada. ` +
+      `As notas de interpretação referem esses valores como referência descritiva — não como normas do instrumento.`;
+
+    oorEl.innerHTML = (S.am < 64) ? youngMsg : oldMsg;
   } else {
     oorEl.style.display = 'none';
   }
@@ -1639,9 +1660,10 @@ function finish() {
       ? 'Perfil descritivo — fora da faixa normativa validada'
       : tk==='comp'?'Protocolo de Compreensão administrado'
       : tk==='aware'?'Protocolo de Consciência administrado':'Score bruto registado';
+    const pctTot = mx>0 ? Math.round(tot/mx*100) : 0;
     document.getElementById('rv-text').textContent = outRange
-      ? `Score total: ${tot} de ${mx} itens (${mx>0?Math.round(tot/mx*100):0}%). `+
-        `Perfil clínico descritivo — ver detalhes por tarefa abaixo.`
+      ? `Score bruto: ${tot}/${mx} itens (${pctTot}%). ` +
+        `Sem dados normativos disponíveis para esta faixa etária — ver perfil por estrutura abaixo para interpretação descritiva.`
       : `Score total: ${tot} de ${mx} itens. Score padronizado requer protocolo completo e idade 5;4–6;10 anos.`;
     document.getElementById('rv-rec').style.display = 'none';
   }
@@ -1657,118 +1679,272 @@ function finish() {
   const tasksEl = document.getElementById('r-tasks');
   let html = '';
 
+  // Age context flags
+  const younger = S.am > 0 && S.am < 64;   // < 5;4
+  const older   = S.am > 82;                // > 6;10
+  // Cross-task convergence (computed later)
+  let roLow = false, ioLow = false;
+
   if (tk!=='aware') {
+    // ── 2A: Passivas ──
     const pctAtiva   = n2aAtiva>0   ? Math.round(s2aAtiva/n2aAtiva*100)   : 0;
     const pctPassiva = n2aPassiva>0 ? Math.round(s2aPassiva/n2aPassiva*100): 0;
-    const asym2A = pctAtiva - pctPassiva;
-    const zA_pass = canC ? zScore(n2aPassiva>0?s2aPassiva/n2aPassiva:0, 'Passive', ng) : null;
-    const zA_act  = canC ? zScore(n2aAtiva>0?s2aAtiva/n2aAtiva:0,   'Active',  ng) : null;
+    const asym2A     = pctAtiva - pctPassiva;
+    const zA_pass    = canC ? zScore(s2aPassiva/Math.max(n2aPassiva,1), 'Passive', ng) : null;
+    const zA_act     = canC ? zScore(s2aAtiva/Math.max(n2aAtiva,1),     'Active',  ng) : null;
+    const passLow    = zA_pass !== null ? zA_pass < -1 : pctPassiva < 75;
+    const actLow     = zA_act  !== null ? zA_act  < -1 : pctAtiva   < 75;
     let note2A = '';
-    if (zA_pass === null ? pctPassiva < 80 : zA_pass < -1) {
-      note2A = asym2A >= 20
-        ? `O desempenho sugere uma possível dificuldade específica com a estrutura passiva: ${pctAtiva}% de acertos nas frases ativas contrasta com ${pctPassiva}% nas passivas. ` +
-          `Em crianças com desenvolvimento típico aos 5 anos, os estudos em Português Europeu documentam taxas de acerto geralmente acima dos 85–90% em passivas eventivas. ` +
-          `Esta assimetria pode refletir o uso de estratégias de processamento por ordem canónica (Agente–Verbo–Tema), que competem com a leitura correta da estrutura passiva. ` +
-          `Recomenda-se aprofundar a avaliação da compreensão de frases com inversão temática e integrar estes dados no contexto clínico mais alargado.`
-        : `O desempenho nas passivas situa-se abaixo do esperado para esta faixa etária, sem contudo evidenciar uma assimetria marcada em relação às frases ativas. ` +
-          `Este padrão pode refletir dificuldades de compreensão que não são exclusivamente sintáticas, ou uma fase de aquisição ainda em curso. ` +
-          `Recomenda-se observar em contexto e complementar com avaliação da compreensão de frases simples.`;
+
+    if (passLow || actLow) {
+      // Build note by context
+      const zPassStr = zA_pass !== null ? ` (z = ${zA_pass.toFixed(1)})` : '';
+      const zActStr  = zA_act  !== null ? ` (z = ${zA_act.toFixed(1)})`  : '';
+
+      if (actLow && passLow) {
+        // Both low — general or task comprehension issue
+        note2A = `A criança obteve ${pctAtiva}%${zActStr} nas frases ativas e ${pctPassiva}%${zPassStr} nas passivas. ` +
+          `O facto de o desempenho ser baixo tanto nas frases canónicas (ativas) como nas não-canónicas (passivas) sugere que as dificuldades ` +
+          `podem não ser especificamente sintáticas: poderão reflectir dificuldades de compreensão mais gerais, dificuldades atencionais, ` +
+          `ou dificuldades na interpretação da tarefa de escolha de imagem. ` +
+          (canC
+            ? `Os dados normativos do TACCSi indicam que crianças de ${NORMS[ng].label} obtêm tipicamente ${Math.round(NORMS[ng].sub.Active.M*100)}% nas ativas e ${Math.round(NORMS[ng].sub.Passive.M*100)}% nas passivas. ` +
+              `Recomenda-se avaliar a compreensão de frases simples e observar se as dificuldades se generalizam a outras tarefas de compreensão.`
+            : younger
+              ? `A investigação em PE mostra que crianças de 5 anos com DT apresentam ~90% de acerto em passivas eventivas (Estrela, 2014; Agostinho, 2020). ` +
+                `Para crianças desta faixa etária, dificuldades com as frases ativas são incomuns e merecem atenção. ` +
+                `Recomenda-se avaliar a compreensão de frases simples para clarificar o perfil.`
+              : `Para crianças desta idade (> 6;10), dificuldades persistentes em ambos os tipos de frases são clinicamente relevantes e justificam avaliação aprofundada.`);
+
+      } else if (!actLow && passLow) {
+        // Classic asymmetry — canonical/non-canonical
+        note2A = `A criança demonstra a assimetria canónico/não-canónico esperada em contexto de dificuldade sintática: ` +
+          `${pctAtiva}%${zActStr} nas frases ativas (canónicas) contrasta com ${pctPassiva}%${zPassStr} nas passivas. ` +
+          `A estrutura passiva inverte a ordem temática básica Agente–Verbo–Tema do Português Europeu (língua SVO), ` +
+          `colocando o tema/paciente em posição de sujeito. Crianças que processam frases com base na estratégia de ordem canónica ` +
+          `tendem a interpretar incorrectamente as passivas, atribuindo o papel de agente ao NP inicial. ` +
+          (canC
+            ? `Comparando com os dados normativos (${NORMS[ng].label}), o desempenho nas passivas está ${zA_pass < -2 ? 'marcadamente' : ''} abaixo do esperado (z = ${zA_pass.toFixed(1)}; M normativo = ${Math.round(NORMS[ng].sub.Passive.M*100)}%). ` +
+              `A investigação em PE documenta que crianças com PDL apresentam dificuldades específicas em passivas eventivas long (Costa, 2024; Montgomery & Evans, 2009). ` +
+              `${zA_pass < -2 ? 'O z-score indica dificuldades marcadas que reforçam a necessidade de avaliação abrangente.' : 'Recomenda-se integrar com o perfil das relativas e interrogativas para uma leitura convergente.'}`
+            : younger
+              ? `A investigação em PE documenta que crianças com DT aos 5 anos atingem ~90% de acerto em passivas eventivas (Estrela, 2014; Agostinho, 2020). ` +
+                `Este valor serve de referência descritiva — os dados normativos do TACCSi não cobrem esta faixa etária. ` +
+                `A assimetria observada é consistente com dificuldades sintáticas, mas deve ser interpretada com cautela dado que a aquisição das passivas ainda está em curso nesta idade.`
+              : `A investigação mostra que crianças com DT de 8-11 anos atingem 97.5% nas passivas eventivas, e crianças com PDL ou ASD+PDL da mesma faixa podem ficar nos 72-73% (Costa, 2024). ` +
+                `Para uma criança desta idade, um desempenho baixo nas passivas com bom desempenho nas ativas é clinicamente significativo ` +
+                `e sugere dificuldades persistentes no processamento de estruturas com inversão temática.`);
+
+      } else {
+        // Ativas low, passivas OK — atypical
+        note2A = `O padrão observado é atípico: o desempenho nas passivas (${pctPassiva}%${zPassStr}) é superior ao das frases ativas (${pctAtiva}%${zActStr}). ` +
+          `Em circunstâncias normais, as frases ativas são mais fáceis por preservarem a ordem canónica Agente–Verbo–Tema. ` +
+          `Este padrão pode reflectir dificuldades de atenção, de compreensão da tarefa, ou estratégias de resposta não-linguísticas. ` +
+          `Recomenda-se reavaliar com atenção ao comportamento durante a tarefa.`;
+      }
     }
+
     html += taskCard('2A','#2a8a8a','Compreensão de Passivas',
       '15 itens · selecção de imagem (3 opções)',
       s2a, 15,
-      [{label:'Ativas — canónicas',     score:s2aAtiva,   max:n2aAtiva,   color:'#70b8b8'},
-       {label:'Passivas — não-canónicas', score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'}],
+      [{label:'Ativas — canónicas',        score:s2aAtiva,   max:n2aAtiva,   color:'#70b8b8'},
+       {label:'Passivas — não-canónicas',   score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'}],
       note2A);
 
-    const pctRS = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
-    const pctRO = n2bRO>0 ? Math.round(s2bRO/n2bRO*100) : 0;
+    // ── 2B: Relativas ──
+    const pctRS   = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
+    const pctRO   = n2bRO>0 ? Math.round(s2bRO/n2bRO*100) : 0;
     const asym2BRel = pctRS - pctRO;
-    const zRO = canC ? zScore(n2bRO>0?s2bRO/n2bRO:0, 'RelObj', ng) : null;
-    let noteRel = '';
-    if (zRO === null ? pctRO < 80 : zRO < -1) {
-      noteRel = asym2BRel >= 20
-        ? `O padrão observado — maior acerto nas relativas de sujeito (${pctRS}%) do que nas de objeto (${pctRO}%) — é consistente com a assimetria sujeito/objeto documentada na literatura. ` +
-          `As relativas de objeto envolvem o movimento do núcleo nominal para posição periférica, com o sujeito da relativa a intervir na cadeia sintática — ` +
-          `uma configuração que impõe um custo de processamento considerável. ` +
-          `Em Português Europeu, crianças com PDL tendem a manter o desempenho nas relativas de sujeito (~98%) enquanto apresentam dificuldades marcadas nas de objeto (~55%), ` +
-          `ao contrário das crianças com desenvolvimento típico de 5 anos (~68%). ` +
-          `A magnitude da assimetria observada justifica o aprofundamento da avaliação sintática e a integração com outras fontes de informação clínica.`
-        : `As relativas de objeto apresentam um desempenho abaixo do limiar de referência, sem que se observe uma assimetria muito marcada em relação às relativas de sujeito. ` +
-          `Estas estruturas envolvem configurações sintáticas não-canónicas que são tipicamente mais exigentes em termos de processamento. ` +
-          `Recomenda-se monitorizar a evolução e considerar avaliação complementar da compreensão de frases complexas.`;
+    const zRS     = canC ? zScore(s2bRS/Math.max(n2bRS,1), 'RelSubj', ng) : null;
+    const zRO_sc  = canC ? zScore(s2bRO/Math.max(n2bRO,1), 'RelObj',  ng) : null;
+    const rsLow   = zRS    !== null ? zRS    < -1 : pctRS < 75;
+    roLow         = zRO_sc !== null ? zRO_sc < -1 : pctRO < 65;
+    let noteRel   = '';
+
+    if (roLow || rsLow) {
+      const zRSStr = zRS    !== null ? ` (z = ${zRS.toFixed(1)})`    : '';
+      const zROStr = zRO_sc !== null ? ` (z = ${zRO_sc.toFixed(1)})` : '';
+
+      if (rsLow && roLow) {
+        noteRel = `A criança apresenta dificuldades tanto nas relativas de sujeito (${pctRS}%${zRSStr}) como nas de objeto (${pctRO}%${zROStr}). ` +
+          `As relativas de sujeito preservam a ordem canónica dentro da estrutura encaixada e são geralmente adquiridas cedo — ` +
+          `a literatura descreve ~98% de acerto em crianças DT de 5 anos (Costa, Lobo & Silva, 2011). ` +
+          `Dificuldades nas relativas de sujeito sugerem que as dificuldades podem ter uma base mais ampla ` +
+          `do que a sensibilidade específica ao efeito de intervenção, e merecem avaliação aprofundada da compreensão de frases complexas. ` +
+          (canC
+            ? `Os z-scores obtidos (RS: ${zRSStr.trim()}, RO: ${zROStr.trim()}) confirmam que o desempenho está abaixo do esperado para o grupo normativo (${NORMS[ng].label}).`
+            : older
+              ? `Para uma criança desta idade, dificuldades nas relativas de sujeito são particularmente significativas e justificam avaliação urgente.`
+              : '');
+
+      } else if (!rsLow && roLow) {
+        // Classic asymmetry RS>>RO — intervention effect
+        noteRel = `O perfil observado — ${pctRS}%${zRSStr} nas relativas de sujeito e ${pctRO}%${zROStr} nas de objeto — ` +
+          `é consistente com o efeito de intervenção sintática documentado extensivamente na literatura. ` +
+          `Nas relativas de objeto, o núcleo nominal é movido para posição periférica esquerda, ` +
+          `ficando o sujeito da relativa a intervir entre o elemento deslocado e a sua posição de base — ` +
+          `uma configuração não-canónica que impõe custo elevado de processamento. ` +
+          `Em PE, crianças DT de 5 anos obtêm ~98% nas RS mas apenas ~68% nas RO (Costa, Lobo & Silva, 2011). ` +
+          (canC
+            ? `Comparando com os dados normativos do TACCSi (${NORMS[ng].label}): M nas RO = ${Math.round(NORMS[ng].sub.RelObj.M*100)}%. ` +
+              `O z-score de ${zRO_sc.toFixed(1)} indica que o desempenho está ${zRO_sc < -2 ? 'marcadamente (>2 DP)' : ''} abaixo da média normativa. ` +
+              `Crianças com PDL em PE mantêm ~98% nas RS mas apresentam apenas ~55% nas RO, mesmo em idades mais avançadas (Martins, 2022). ` +
+              `${zRO_sc < -2 ? 'Este resultado reforça a necessidade de avaliação clínica abrangente.' : 'A integração com o perfil das interrogativas de objeto permitirá uma leitura mais completa.'}`
+            : younger
+              ? `Para crianças desta faixa etária (< 5;4), os dados normativos do TACCSi não estão disponíveis. ` +
+                `A literatura descreve ~64% de acerto nas RO em crianças DT de 5-7 anos (Martins, 2022), servindo de referência descritiva. ` +
+                `A assimetria RS/RO observada é o padrão esperado em dificuldades sintáticas, ` +
+                `mas deve ser interpretada com cautela dado que a aquisição das RO está ainda em curso nesta faixa etária.`
+              : `Para crianças desta idade (> 6;10), a literatura documenta ~95% de acerto nas RO em DT de 8-11 anos, ` +
+                `enquanto crianças com PDL e ASD+PDL da mesma faixa ficam nos 52-55% (Martins, 2022). ` +
+                `Um desempenho baixo nas RO nesta idade é clinicamente mais significativo do que em criança pré-escolar, ` +
+                `pois a janela de aquisição típica já terá sido ultrapassada.`);
+      }
     }
+
     html += taskCard('2B·Rel','#7c5cbf','Relativas de Sujeito e de Objeto',
       '15 itens · selecção esquerda/direita',
       s2bRel, 15,
-      [{label:'Sujeito — RS (canónicas)',      score:s2bRS, max:n2bRS, color:'#b09de0'},
-       {label:'Objeto — RO (marcador clínico)', score:s2bRO, max:n2bRO, color:'#5a3a9a'}],
+      [{label:'RS — sujeito (canónicas)',       score:s2bRS, max:n2bRS, color:'#b09de0'},
+       {label:'RO — objeto (marcador clínico)',  score:s2bRO, max:n2bRO, color:'#5a3a9a'}],
       noteRel);
 
-    const pctIS = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
-    const pctIO = n2bIO>0 ? Math.round(s2bIO/n2bIO*100) : 0;
+    // ── 2B: Interrogativas ──
+    const pctIS   = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
+    const pctIO   = n2bIO>0 ? Math.round(s2bIO/n2bIO*100) : 0;
     const asym2BInt = pctIS - pctIO;
-    const zIO = canC ? zScore(n2bIO>0?s2bIO/n2bIO:0, 'WhQObj', ng) : null;
-    let noteInt = '';
-    if (zIO === null ? pctIO < 80 : zIO < -1) {
-      noteInt = asym2BInt >= 20
-        ? `O padrão observado sugere uma possível dificuldade específica com as interrogativas de objeto: ${pctIS}% nas interrogativas de sujeito versus ${pctIO}% nas de objeto. ` +
-          `Estruturalmente, as interrogativas-Q de objeto partilham com as relativas de objeto o fenómeno de intervenção sintática — ` +
-          `o elemento-Q desloca-se por sobre o sujeito referencial, criando uma configuração não-canónica. ` +
-          `Em crianças com desenvolvimento típico aos 5 anos, as taxas de acerto nas interrogativas de objeto situam-se tipicamente em torno de 69%, ` +
-          `subindo progressivamente com a idade e com intervenção. ` +
-          `A observação de dificuldades nesta estrutura é clinicamente relevante, em especial quando combinada com dificuldades nas relativas de objeto.`
-        : `As interrogativas de objeto apresentam desempenho abaixo do limiar de referência. ` +
-          `Estas estruturas partilham com as relativas de objeto mecanismos de deslocamento sintático com efeitos de intervenção, ` +
-          `e tendem a ser adquiridas de forma gradual ao longo da idade pré-escolar. ` +
-          `Recomenda-se integrar estes resultados com os das relativas de objeto para uma leitura do perfil sintático mais completa.`;
+    const zIS     = canC ? zScore(s2bIS/Math.max(n2bIS,1), 'WhQSubj', ng) : null;
+    const zIO_sc  = canC ? zScore(s2bIO/Math.max(n2bIO,1), 'WhQObj',  ng) : null;
+    const isLow   = zIS    !== null ? zIS    < -1 : pctIS < 80;
+    ioLow         = zIO_sc !== null ? zIO_sc < -1 : pctIO < 65;
+    let noteInt   = '';
+
+    if (ioLow || isLow) {
+      const zISStr = zIS    !== null ? ` (z = ${zIS.toFixed(1)})`    : '';
+      const zIOStr = zIO_sc !== null ? ` (z = ${zIO_sc.toFixed(1)})` : '';
+      const convSignal = roLow && ioLow;
+
+      if (isLow && ioLow) {
+        noteInt = `A criança apresenta dificuldades tanto nas interrogativas de sujeito (${pctIS}%${zISStr}) como nas de objeto (${pctIO}%${zIOStr}). ` +
+          `As interrogativas-Q de sujeito (IS) são estruturalmente simples e preservam a ordem argumental básica — ` +
+          `a literatura documenta ~97% de acerto em crianças DT de 5 anos (Cerejeira, 2009; Baião & Lobo, 2014). ` +
+          `Dificuldades nas IS sugerem que as dificuldades podem ter raiz em níveis anteriores ao processo de extracção-Q, ` +
+          `nomeadamente dificuldades de compreensão de frases simples ou de processamento lexical. ` +
+          (canC ? `O perfil de z-scores (IS: ${zISStr.trim()}, IO: ${zIOStr.trim()}) confirma dificuldades abaixo do esperado para o grupo normativo.` : '');
+
+      } else if (!isLow && ioLow) {
+        noteInt = `O perfil observado — ${pctIS}%${zISStr} nas interrogativas de sujeito e ${pctIO}%${zIOStr} nas de objeto — ` +
+          `reproduz o padrão de intervenção descrito para as relativas de objeto. ` +
+          `Nas interrogativas-Q de objeto, o constituinte-Q com restrição lexical desloca-se por sobre o sujeito pleno, ` +
+          `criando uma configuração de intervenção que dificulta a interpretação. ` +
+          `A investigação em PE documenta ~97% nas IS e apenas ~69% nas IO em crianças DT de 5 anos (Cerejeira, 2009; Baião & Lobo, 2014). ` +
+          (canC
+            ? `O z-score nas IO (${zIO_sc.toFixed(1)}) indica desempenho ${zIO_sc < -2 ? 'marcadamente' : ''} abaixo da média normativa (M = ${Math.round(NORMS[ng].sub.WhQObj.M*100)}% para ${NORMS[ng].label}). ` +
+              `Crianças com PDL em PE de 8-11 anos obtêm ~61% nas IO (Martins, 2022). ` +
+              (convSignal
+                ? `⚠ A convergência de dificuldades nas RO e nas IO — duas estruturas que partilham o mecanismo de intervenção sintática — constitui um sinal clínico robusto que justifica avaliação de linguagem abrangente.`
+                : `A integração com o perfil das relativas permite estimar se as dificuldades são consistentes com o efeito de intervenção.`)
+            : younger
+              ? `Para esta faixa etária, a literatura descreve ~61% nas IO em crianças DT de 5-7 anos (Martins, 2022), servindo de referência descritiva. ` +
+                (convSignal
+                  ? `A presença de dificuldades em ambas as estruturas de extracção de objeto (RO e IO) é consistente com dificuldades no processamento de estruturas com intervenção sintática, mesmo sem dados normativos disponíveis para esta idade.`
+                  : `A assimetria IS/IO observada é teoricamente esperada, mas a sua interpretação clínica deve ser cautelosa nesta faixa etária.`)
+              : `Para crianças desta idade, a literatura documenta ~95% nas IO em DT de 8-11 anos, e 57-61% em PDL e ASD+PDL da mesma faixa (Martins, 2022). ` +
+                (convSignal
+                  ? `⚠ A convergência de dificuldades nas RO e nas IO nesta idade é clinicamente muito significativa: indica que as dificuldades com estruturas de intervenção são persistentes e provavelmente não representam apenas um atraso de desenvolvimento.`
+                  : `Dificuldades persistentes nas IO nesta idade justificam avaliação aprofundada.`));
+      }
     }
+
     html += taskCard('2B·Int','#e8734a','Interrogativas-Q de Sujeito e de Objeto',
       '15 itens · selecção esquerda/direita',
       s2bInt, 15,
-      [{label:'Sujeito — IS (canónicas)',      score:s2bIS, max:n2bIS, color:'#f0a070'},
-       {label:'Objeto — IO (marcador clínico)', score:s2bIO, max:n2bIO, color:'#c04010'}],
+      [{label:'IS — sujeito (canónicas)',        score:s2bIS, max:n2bIS, color:'#f0a070'},
+       {label:'IO — objeto (marcador clínico)',   score:s2bIO, max:n2bIO, color:'#c04010'}],
       noteInt);
   }
 
   if (tk!=='comp') {
+    // ── 2C: Consciência sintática ──
     const pctConc = n2cConc>0 ? Math.round(s2cConc/n2cConc*100) : 0;
     const pctOrd  = n2cOrd>0  ? Math.round(s2cOrd/n2cOrd*100)   : 0;
     const pctGram = n2cGram>0 ? Math.round(s2cGram/n2cGram*100) : 0;
-    const asymConc = pctConc - pctOrd; // positive = better on agreement
+    const zConc   = canC ? zScore(s2cConc/Math.max(n2cConc,1), 'AgrConcordance', ng) : null;
+    const zOrd_sc = canC ? zScore(s2cOrd/Math.max(n2cOrd,1),   'AgrOrder',       ng) : null;
+    const zGram   = canC ? zScore(s2cGram/Math.max(n2cGram,1),  'Grammatical',    ng) : null;
+    const concLow = zConc   !== null ? zConc   < -1 : pctConc < 55;
+    const ordLow  = zOrd_sc !== null ? zOrd_sc < -1 : pctOrd  < 45;
+    const gramLow = zGram   !== null ? zGram   < -1 : pctGram < 70;
     let note2C = '';
-    const zConc = canC ? zScore(n2cConc>0?s2cConc/n2cConc:0, 'AgrConcordance', ng) : null;
-    const zOrd  = canC ? zScore(n2cOrd>0?s2cOrd/n2cOrd:0,   'AgrOrder',       ng) : null;
-    if (s2c / 12 < 0.80 || (zConc !== null && (zConc < -1 || zOrd < -1))) {
-      if ((zOrd !== null ? zOrd < -1 : pctOrd < 60) && (zConc !== null ? zConc >= -1 : pctConc >= 65)) {
-        note2C = `O padrão observado — melhor desempenho nas violações de concordância (${pctConc}%) do que nas de ordem de palavras (${pctOrd}%) — ` +
-          `é consistente com o que a investigação descreve para crianças com desenvolvimento típico em idade pré-escolar. ` +
-          `A sensibilidade à ordem de palavras tende a ser adquirida mais tarde do que a concordância, ` +
-          `pelo que este padrão pode refletir uma fase de desenvolvimento ainda em curso. ` +
-          `Recomenda-se monitorizar, em particular a evolução da detecção de violações de ordem.`;
-      } else if ((zConc !== null ? zConc < -1 : pctConc < 60) && (zOrd !== null ? zOrd >= -1 : pctOrd >= 65)) {
-        note2C = `O desempenho nas violações de ordem de palavras (${pctOrd}%) é superior ao das violações de concordância (${pctConc}%). ` +
-          `Este padrão é atípico: a investigação em Português Europeu indica que as crianças pré-escolares são geralmente mais sensíveis ` +
-          `a violações de concordância do que a violações de ordem. ` +
-          `Dificuldades específicas com a concordância merecem acompanhamento e poderão orientar objetivos de intervenção.`;
-      } else if ((zConc !== null ? zConc < -1 : pctConc < 60) && (zOrd !== null ? zOrd < -1 : pctOrd < 60)) {
-        note2C = `A criança apresenta dificuldades tanto nas violações de concordância (${pctConc}%) como nas de ordem de palavras (${pctOrd}%). ` +
-          `Um desempenho baixo em ambos os tipos de violação pode sugerir menor reflexão meta-sintática de forma mais generalizada, ` +
-          `ou dificuldade em manter a atenção e compreender a tarefa de julgamento. ` +
-          `Importa integrar estes dados com os da compreensão e com a observação clínica.`;
-      } else {
-        note2C = `O desempenho na consciência sintática situa-se abaixo do limiar de referência (concordância: ${pctConc}%, ordem: ${pctOrd}%). ` +
-          `A tarefa de julgamento de gramaticalidade não requer metalinguagem explícita — a criança apenas indica se a frase "soa bem" — ` +
-          `mas é cognitivamente mais exigente do que as tarefas de compreensão. ` +
-          `Recomenda-se interpretar estes resultados em conjunto com o perfil global de compreensão.`;
-      }
+
+    const zConcStr = zConc   !== null ? ` (z = ${zConc.toFixed(1)})`   : '';
+    const zOrdStr  = zOrd_sc !== null ? ` (z = ${zOrd_sc.toFixed(1)})` : '';
+    const zGramStr = zGram   !== null ? ` (z = ${zGram.toFixed(1)})`   : '';
+
+    // Preamble: what the task requires
+    const taskPreamble = `A tarefa de julgamento de gramaticalidade avalia conhecimento sintático implícito sem exigir metalinguagem explícita — ` +
+      `a criança indica apenas se a frase "soa bem" ou não. ` +
+      `Segundo Simard, Labelle & Bergeron (2017), este nível de consciência sintática é adequado para a faixa pré-escolar. ` +
+      `A investigação em PE indica que as crianças são geralmente mais sensíveis a violações de concordância do que a violações de ordem (Loureiro, 2008; Perdigão, 2015). `;
+
+    if (gramLow && concLow && ordLow) {
+      // All three low
+      note2C = taskPreamble +
+        `A criança apresenta dificuldades generalizadas: frases gramaticais aceites em ${pctGram}%${zGramStr}, ` +
+        `violações de concordância detectadas em ${pctConc}%${zConcStr}, e violações de ordem em ${pctOrd}%${zOrdStr}. ` +
+        `Um desempenho baixo em todas as sub-tarefas pode reflectir dificuldade em compreender a natureza da tarefa de julgamento, ` +
+        `dificuldades atencionais, ou dificuldades generalizadas ao nível da consciência metalinguística. ` +
+        `Importa integrar com o perfil de compreensão e com a observação clínica durante a avaliação.`;
+
+    } else if (!concLow && ordLow) {
+      // Typical pattern: agreement OK, word order low
+      note2C = taskPreamble +
+        `O perfil observado — melhor detecção de violações de concordância (${pctConc}%${zConcStr}) do que de violações de ordem (${pctOrd}%${zOrdStr}) — ` +
+        `é consistente com o padrão descrito na literatura para crianças pré-escolares com desenvolvimento típico. ` +
+        `Perdigão (2015) demonstrou que crianças de 5 anos identificam melhor violações de concordância do que violações de ordem de palavras, ` +
+        `com a sensibilidade à ordem a desenvolver-se progressivamente ao longo da escolaridade. ` +
+        (canC
+          ? `O z-score nas violações de concordância (${zConc?.toFixed(1) ?? 'N/A'}) sugere que essa componente está ${!concLow ? 'dentro do esperado' : 'abaixo do esperado'}, ` +
+            `enquanto as violações de ordem estão marcadamente abaixo (z = ${zOrd_sc?.toFixed(1)}; M normativo = ${Math.round(NORMS[ng].sub.AgrOrder.M*100)}%). ` +
+            `Este padrão pode reflectir uma fase de aquisição ainda em curso para a detecção de problemas de ordem, sendo recomendável monitorização longitudinal.`
+          : `Para esta faixa etária, este padrão é esperado do ponto de vista desenvolvimental e não constitui, por si só, um sinal de alarme. Recomenda-se monitorização.`);
+
+    } else if (concLow && !ordLow) {
+      // Atypical: order OK, agreement low
+      note2C = taskPreamble +
+        `O padrão observado é atípico: melhor detecção de violações de ordem (${pctOrd}%${zOrdStr}) do que de violações de concordância (${pctConc}%${zConcStr}). ` +
+        `A investigação em PE indica sistematicamente o padrão inverso — as violações de concordância são detectadas com maior facilidade do que as de ordem (Loureiro, 2008; Perdigão, 2015). ` +
+        `Dificuldades específicas na detecção de erros de concordância podem sugerir fragilidades morfossintáticas ao nível do processamento do acordo gramatical, ` +
+        `e merecem atenção clínica, especialmente se acompanhadas de dificuldades na produção de morfologia de concordância.`;
+
+    } else if (concLow && ordLow) {
+      // Both agrammatical types low
+      note2C = taskPreamble +
+        `A criança apresenta dificuldades na detecção de ambos os tipos de violação: ` +
+        `concordância em ${pctConc}%${zConcStr} e ordem de palavras em ${pctOrd}%${zOrdStr}. ` +
+        (gramLow
+          ? `A dificuldade em aceitar frases gramaticais (${pctGram}%${zGramStr}) reforça a hipótese de uma dificuldade mais geral na tarefa de julgamento. `
+          : `O facto de aceitar correctamente as frases gramaticais (${pctGram}%) indica que a criança compreende a lógica da tarefa, ` +
+            `mas tem dificuldades em identificar violações específicas. `) +
+        (canC
+          ? `Os z-scores obtidos (concordância: ${zConc?.toFixed(1)}, ordem: ${zOrd_sc?.toFixed(1)}) indicam que o desempenho está abaixo do esperado para o grupo normativo (${NORMS[ng].label}). `
+          : '') +
+        `Recomenda-se integrar estes resultados com o perfil de compreensão sintática e com observação clínica das produções da criança.`;
+
+    } else if (gramLow && !concLow && !ordLow) {
+      // Can accept ungrammatical but rejects grammatical — interesting
+      note2C = taskPreamble +
+        `A criança tende a não aceitar frases gramaticais (${pctGram}%${zGramStr}), apesar de apresentar melhor detecção de violações. ` +
+        `Este padrão pode reflectir uma estratégia de resposta conservadora ou dificuldades na distinção perceptiva entre frases correctas e incorrectas. ` +
+        `Recomenda-se observar o comportamento durante a tarefa e verificar se a criança compreendeu as instruções.`;
     }
+
     html += taskCard('2C','#3aab6d','Consciência Sintática',
       '12 itens · julgamento de gramaticalidade',
       s2c, 12,
-      [{label:'Gramaticais — aceitar',         score:s2cGram, max:n2cGram, color:'#a8dfc0'},
-       {label:'Agramaticais: concordância',     score:s2cConc, max:n2cConc, color:'#3aab6d'},
-       {label:'Agramaticais: ordem de palavras',score:s2cOrd,  max:n2cOrd,  color:'#1a7a40'}],
+      [{label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0'},
+       {label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d'},
+       {label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40'}],
       note2C);
   }
 
