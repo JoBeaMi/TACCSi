@@ -1318,7 +1318,7 @@ function finish() {
                      s2bRS, n2bRS, s2bRO, n2bRO,
                      s2bIS, n2bIS, s2bIO, n2bIO,
                      s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
-                     tk });
+                     tk, ng: canC ? ng : null });
 
   // ── Task breakdown ──
   const tasksEl = document.getElementById('r-tasks');
@@ -1468,27 +1468,33 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
                              s2bRS, n2bRS, s2bRO, n2bRO,
                              s2bIS, n2bIS, s2bIO, n2bIO,
                              s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
-                             tk }) {
+                             tk, ng }) {
+  const sub  = ng ? NORMS[ng].sub : null;
+  const normLabel = ng ? NORMS[ng].label : null;
+
+  // norm(key) → percentagem inteira da média normativa, ou null
+  const N = k => sub ? Math.round(sub[k] * 100) : null;
+
   const groups = [];
   if (tk !== 'aware') {
     groups.push({ label:'2A · Passivas', color:'#2a8a8a', bars:[
-      { label:'Ativas (canónicas)',       score:s2aAtiva,   max:n2aAtiva,   color:'#5ba8a8' },
-      { label:'Passivas',                 score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a' },
+      { label:'Ativas (canónicas)',       score:s2aAtiva,   max:n2aAtiva,   color:'#5ba8a8', norm: N('Active')  },
+      { label:'Passivas',                 score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a', norm: N('Passive') },
     ]});
     groups.push({ label:'2B · Relativas', color:'#7c5cbf', bars:[
-      { label:'Sujeito — RS (canónicas)', score:s2bRS, max:n2bRS, color:'#a88fdf' },
-      { label:'Objeto — RO',              score:s2bRO, max:n2bRO, color:'#4a2a8a' },
+      { label:'Sujeito — RS (canónicas)', score:s2bRS, max:n2bRS, color:'#a88fdf', norm: N('RelSubj') },
+      { label:'Objeto — RO',              score:s2bRO, max:n2bRO, color:'#4a2a8a', norm: N('RelObj')  },
     ]});
     groups.push({ label:'2B · Interrogativas', color:'#e8734a', bars:[
-      { label:'Sujeito — IS (canónicas)', score:s2bIS, max:n2bIS, color:'#f0a878' },
-      { label:'Objeto — IO',              score:s2bIO, max:n2bIO, color:'#a03010' },
+      { label:'Sujeito — IS (canónicas)', score:s2bIS, max:n2bIS, color:'#f0a878', norm: N('WhQSubj') },
+      { label:'Objeto — IO',              score:s2bIO, max:n2bIO, color:'#a03010', norm: N('WhQObj')  },
     ]});
   }
   if (tk !== 'comp') {
     groups.push({ label:'2C · Consciência', color:'#3aab6d', bars:[
-      { label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0' },
-      { label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d' },
-      { label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40' },
+      { label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0', norm: N('Grammatical')     },
+      { label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d', norm: N('AgrConcordance') },
+      { label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40', norm: N('AgrOrder')       },
     ]});
   }
 
@@ -1537,6 +1543,13 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
         svg += `<rect x="${lm}" y="${y}" width="${barW}" height="${barH}" fill="${col}" rx="4" opacity=".88"/>`;
       }
 
+      // Normative mean tick (vertical line + label)
+      if (b.norm !== null && b.norm !== undefined) {
+        const nx = lm + chartW * b.norm / 100;
+        svg += `<line x1="${nx}" y1="${y+1}" x2="${nx}" y2="${y+barH-1}" stroke="white" stroke-width="2.5" opacity=".9"/>`;
+        svg += `<text x="${nx}" y="${y - 2}" text-anchor="middle" font-size="7" fill="#555">M=${b.norm}%</text>`;
+      }
+
       // Row label
       svg += `<text x="${lm - 6}" y="${y + barH/2 + 4}" text-anchor="end" font-size="10" fill="#333">${b.label}</text>`;
 
@@ -1559,7 +1572,12 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
   svg += `<rect x="${lm+106}" y="${legY-6}" width="12" height="12" fill="#8a7000" rx="2" opacity=".8"/>`;
   svg += `<text x="${lm+122}" y="${legY+4}" font-size="8" fill="#888">70–84%</text>`;
   svg += `<line x1="${lm+178}" y1="${legY}" x2="${lm+194}" y2="${legY}" stroke="#d94f3d" stroke-width="1.5" stroke-dasharray="4,2"/>`;
-  svg += `<text x="${lm+198}" y="${legY+4}" font-size="8" fill="#d94f3d">Limiar clínico 85%</text>`;
+  svg += `<text x="${lm+198}" y="${legY+4}" font-size="8" fill="#d94f3d">Limiar 85%</text>`;
+  if (sub) {
+    svg += `<line x1="${lm+262}" y1="${legY-4}" x2="${lm+262}" y2="${legY+8}" stroke="white" stroke-width="2.5" opacity=".9"/>`;
+    svg += `<rect x="${lm+256}" y="${legY-7}" width="12" height="18" fill="#888" rx="2" opacity=".3"/>`;
+    svg += `<text x="${lm+273}" y="${legY+4}" font-size="8" fill="#555">Traço branco = M normativo (${normLabel})</text>`;
+  }
 
   svg += '</svg>';
 
