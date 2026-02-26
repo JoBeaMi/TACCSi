@@ -857,13 +857,38 @@ const HS2B = [
 ══════════════════════════════════════════════════════ */
 const NORMS = {
   g1: {label:'5;4–6;0 (64–72m)',  M:45.5, SD:9.2,
-    sub:{ Active:.832, Passive:.632, RelSubj:.889, RelObj:.765,
-          WhQSubj:.945, WhQObj:.759, Grammatical:.832,
-          AgrConcordance:.486, AgrOrder:.403 }},
+    sub:{
+      Active:        {M:.832, SD:.374, k:5 },
+      Passive:       {M:.632, SD:.483, k:10},
+      RelSubj:       {M:.889, SD:.315, k:5 },
+      RelObj:        {M:.765, SD:.424, k:10},
+      WhQSubj:       {M:.945, SD:.227, k:6 },
+      WhQObj:        {M:.759, SD:.428, k:9 },
+      Grammatical:   {M:.832, SD:.374, k:4 },
+      AgrConcordance:{M:.486, SD:.501, k:4 },
+      AgrOrder:      {M:.403, SD:.491, k:4 },
+    }},
   g2: {label:'6;1–6;10 (73–82m)', M:51.0, SD:8.4,
-    sub:{ Active:.891, Passive:.728, RelSubj:.898, RelObj:.840,
-          WhQSubj:.949, WhQObj:.810, Grammatical:.846,
-          AgrConcordance:.547, AgrOrder:.497 }},
+    sub:{
+      Active:        {M:.891, SD:.312, k:5 },
+      Passive:       {M:.728, SD:.445, k:10},
+      RelSubj:       {M:.898, SD:.303, k:5 },
+      RelObj:        {M:.840, SD:.367, k:10},
+      WhQSubj:       {M:.949, SD:.221, k:6 },
+      WhQObj:        {M:.810, SD:.392, k:9 },
+      Grammatical:   {M:.846, SD:.362, k:4 },
+      AgrConcordance:{M:.547, SD:.499, k:4 },
+      AgrOrder:      {M:.497, SD:.501, k:4 },
+    }},
+};
+// z-score for a child's proportion on k items vs normative item-level M/SD
+// z = (prop - M) / (SD / sqrt(k))
+const zScore = (prop, normKey, ng) => {
+  if (!ng || !NORMS[ng]) return null;
+  const s = NORMS[ng].sub[normKey];
+  if (!s) return null;
+  const se = s.SD / Math.sqrt(s.k);
+  return (prop - s.M) / se;
 };
 const csc = (r,n) => Math.round(((r - n.M) / n.SD) * 15 + 100);
 
@@ -1318,7 +1343,7 @@ function finish() {
                      s2bRS, n2bRS, s2bRO, n2bRO,
                      s2bIS, n2bIS, s2bIO, n2bIO,
                      s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
-                     tk, ng: canC ? ng : null });
+                     tk, ng: canC ? ng : null, childName: S.name });
 
   // ── Task breakdown ──
   const tasksEl = document.getElementById('r-tasks');
@@ -1328,8 +1353,10 @@ function finish() {
     const pctAtiva   = n2aAtiva>0   ? Math.round(s2aAtiva/n2aAtiva*100)   : 0;
     const pctPassiva = n2aPassiva>0 ? Math.round(s2aPassiva/n2aPassiva*100): 0;
     const asym2A = pctAtiva - pctPassiva;
+    const zA_pass = canC ? zScore(n2aPassiva>0?s2aPassiva/n2aPassiva:0, 'Passive', ng) : null;
+    const zA_act  = canC ? zScore(n2aAtiva>0?s2aAtiva/n2aAtiva:0,   'Active',  ng) : null;
     let note2A = '';
-    if (pctPassiva < 85) {
+    if (zA_pass === null ? pctPassiva < 80 : zA_pass < -1) {
       note2A = asym2A >= 20
         ? `O desempenho sugere uma possível dificuldade específica com a estrutura passiva: ${pctAtiva}% de acertos nas frases ativas contrasta com ${pctPassiva}% nas passivas. ` +
           `Em crianças com desenvolvimento típico aos 5 anos, os estudos em Português Europeu documentam taxas de acerto geralmente acima dos 85–90% em passivas eventivas. ` +
@@ -1349,8 +1376,9 @@ function finish() {
     const pctRS = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
     const pctRO = n2bRO>0 ? Math.round(s2bRO/n2bRO*100) : 0;
     const asym2BRel = pctRS - pctRO;
+    const zRO = canC ? zScore(n2bRO>0?s2bRO/n2bRO:0, 'RelObj', ng) : null;
     let noteRel = '';
-    if (pctRO < 85) {
+    if (zRO === null ? pctRO < 80 : zRO < -1) {
       noteRel = asym2BRel >= 20
         ? `O padrão observado — maior acerto nas relativas de sujeito (${pctRS}%) do que nas de objeto (${pctRO}%) — é consistente com a assimetria sujeito/objeto documentada na literatura. ` +
           `As relativas de objeto envolvem o movimento do núcleo nominal para posição periférica, com o sujeito da relativa a intervir na cadeia sintática — ` +
@@ -1372,8 +1400,9 @@ function finish() {
     const pctIS = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
     const pctIO = n2bIO>0 ? Math.round(s2bIO/n2bIO*100) : 0;
     const asym2BInt = pctIS - pctIO;
+    const zIO = canC ? zScore(n2bIO>0?s2bIO/n2bIO:0, 'WhQObj', ng) : null;
     let noteInt = '';
-    if (pctIO < 85) {
+    if (zIO === null ? pctIO < 80 : zIO < -1) {
       noteInt = asym2BInt >= 20
         ? `O padrão observado sugere uma possível dificuldade específica com as interrogativas de objeto: ${pctIS}% nas interrogativas de sujeito versus ${pctIO}% nas de objeto. ` +
           `Estruturalmente, as interrogativas-Q de objeto partilham com as relativas de objeto o fenómeno de intervenção sintática — ` +
@@ -1400,19 +1429,21 @@ function finish() {
     const pctGram = n2cGram>0 ? Math.round(s2cGram/n2cGram*100) : 0;
     const asymConc = pctConc - pctOrd; // positive = better on agreement
     let note2C = '';
-    if (s2c / 12 < 0.85) {
-      if (pctConc >= 75 && pctOrd < 60) {
+    const zConc = canC ? zScore(n2cConc>0?s2cConc/n2cConc:0, 'AgrConcordance', ng) : null;
+    const zOrd  = canC ? zScore(n2cOrd>0?s2cOrd/n2cOrd:0,   'AgrOrder',       ng) : null;
+    if (s2c / 12 < 0.80 || (zConc !== null && (zConc < -1 || zOrd < -1))) {
+      if ((zOrd !== null ? zOrd < -1 : pctOrd < 60) && (zConc !== null ? zConc >= -1 : pctConc >= 65)) {
         note2C = `O padrão observado — melhor desempenho nas violações de concordância (${pctConc}%) do que nas de ordem de palavras (${pctOrd}%) — ` +
           `é consistente com o que a investigação descreve para crianças com desenvolvimento típico em idade pré-escolar. ` +
           `A sensibilidade à ordem de palavras tende a ser adquirida mais tarde do que a concordância, ` +
           `pelo que este padrão pode refletir uma fase de desenvolvimento ainda em curso. ` +
           `Recomenda-se monitorizar, em particular a evolução da detecção de violações de ordem.`;
-      } else if (pctOrd >= 75 && pctConc < 60) {
+      } else if ((zConc !== null ? zConc < -1 : pctConc < 60) && (zOrd !== null ? zOrd >= -1 : pctOrd >= 65)) {
         note2C = `O desempenho nas violações de ordem de palavras (${pctOrd}%) é superior ao das violações de concordância (${pctConc}%). ` +
           `Este padrão é atípico: a investigação em Português Europeu indica que as crianças pré-escolares são geralmente mais sensíveis ` +
           `a violações de concordância do que a violações de ordem. ` +
           `Dificuldades específicas com a concordância merecem acompanhamento e poderão orientar objetivos de intervenção.`;
-      } else if (pctConc < 60 && pctOrd < 60) {
+      } else if ((zConc !== null ? zConc < -1 : pctConc < 60) && (zOrd !== null ? zOrd < -1 : pctOrd < 60)) {
         note2C = `A criança apresenta dificuldades tanto nas violações de concordância (${pctConc}%) como nas de ordem de palavras (${pctOrd}%). ` +
           `Um desempenho baixo em ambos os tipos de violação pode sugerir menor reflexão meta-sintática de forma mais generalizada, ` +
           `ou dificuldade em manter a atenção e compreender a tarefa de julgamento. ` +
@@ -1468,40 +1499,47 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
                              s2bRS, n2bRS, s2bRO, n2bRO,
                              s2bIS, n2bIS, s2bIO, n2bIO,
                              s2cGram, n2cGram, s2cConc, n2cConc, s2cOrd, n2cOrd,
-                             tk, ng }) {
-  const sub  = ng ? NORMS[ng].sub : null;
+                             tk, ng, childName }) {
+  const sub       = ng ? NORMS[ng].sub : null;
   const normLabel = ng ? NORMS[ng].label : null;
 
-  // norm(key) → percentagem inteira da média normativa, ou null
-  const N = k => sub ? Math.round(sub[k] * 100) : null;
+  // Build bar definitions with normative data attached
+  const B = (label, score, max, color, normKey) => {
+    const prop = max > 0 ? score / max : 0;
+    const ns   = sub ? sub[normKey] : null;
+    const mPct = ns ? ns.M * 100 : null;
+    const sdPct= ns ? ns.SD / Math.sqrt(ns.k) * 100 : null; // SE of proportion
+    const z    = (ns && max > 0) ? ((prop - ns.M) / (ns.SD / Math.sqrt(ns.k))) : null;
+    return { label, score, max, color, prop, pct: prop*100, mPct, sdPct, z };
+  };
 
   const groups = [];
   if (tk !== 'aware') {
     groups.push({ label:'2A · Passivas', color:'#2a8a8a', bars:[
-      { label:'Ativas (canónicas)',       score:s2aAtiva,   max:n2aAtiva,   color:'#5ba8a8', norm: N('Active')  },
-      { label:'Passivas',                 score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a', norm: N('Passive') },
+      B('Ativas (canónicas)',       s2aAtiva,   n2aAtiva,   '#5ba8a8', 'Active'),
+      B('Passivas',                 s2aPassiva, n2aPassiva, '#1a6a6a', 'Passive'),
     ]});
     groups.push({ label:'2B · Relativas', color:'#7c5cbf', bars:[
-      { label:'Sujeito — RS (canónicas)', score:s2bRS, max:n2bRS, color:'#a88fdf', norm: N('RelSubj') },
-      { label:'Objeto — RO',              score:s2bRO, max:n2bRO, color:'#4a2a8a', norm: N('RelObj')  },
+      B('RS — sujeito (canónicas)', s2bRS, n2bRS, '#a88fdf', 'RelSubj'),
+      B('RO — objeto',              s2bRO, n2bRO, '#4a2a8a', 'RelObj'),
     ]});
     groups.push({ label:'2B · Interrogativas', color:'#e8734a', bars:[
-      { label:'Sujeito — IS (canónicas)', score:s2bIS, max:n2bIS, color:'#f0a878', norm: N('WhQSubj') },
-      { label:'Objeto — IO',              score:s2bIO, max:n2bIO, color:'#a03010', norm: N('WhQObj')  },
+      B('IS — sujeito (canónicas)', s2bIS, n2bIS, '#f0a878', 'WhQSubj'),
+      B('IO — objeto',              s2bIO, n2bIO, '#a03010', 'WhQObj'),
     ]});
   }
   if (tk !== 'comp') {
     groups.push({ label:'2C · Consciência', color:'#3aab6d', bars:[
-      { label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0', norm: N('Grammatical')     },
-      { label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d', norm: N('AgrConcordance') },
-      { label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40', norm: N('AgrOrder')       },
+      B('Gramaticais',               s2cGram, n2cGram, '#a8dfc0', 'Grammatical'),
+      B('Agramaticais: concordância', s2cConc, n2cConc, '#3aab6d', 'AgrConcordance'),
+      B('Agramaticais: ordem',        s2cOrd,  n2cOrd,  '#1a7a40', 'AgrOrder'),
     ]});
   }
 
-  const W = 560, lm = 168, rm = 80, chartW = W - lm - rm;
-  const barH = 20, barGap = 5, groupGap = 20, groupLabelH = 22;
-  const topPad = 34, botPad = 34;
-  const refX = lm + chartW * 0.85;
+  // Layout
+  const W = 600, lm = 178, rm = 96, chartW = W - lm - rm;
+  const barH = 20, barGap = 6, groupGap = 22, groupLabelH = 22;
+  const topPad = 46, botPad = 38;
 
   let totalH = topPad;
   groups.forEach((g, gi) => {
@@ -1513,49 +1551,59 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" id="profile-svg" viewBox="0 0 ${W} ${totalH}" width="${W}" height="${totalH}" style="font-family:system-ui,sans-serif;max-width:100%">`;
   svg += `<rect width="${W}" height="${totalH}" fill="#fafbfc" rx="8"/>`;
 
-  // Grid lines + axis labels
+  // Title with child name
+  const title = childName ? `Perfil sintático — ${childName}` : 'Perfil por estrutura sintática';
+  svg += `<text x="${W/2}" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="#2d3748">${title}</text>`;
+  if (normLabel) svg += `<text x="${W/2}" y="34" text-anchor="middle" font-size="9" fill="#888">Referência normativa: ${normLabel} · traço = M · banda = ±1 EP</text>`;
+
+  // Grid lines
   [0, 25, 50, 75, 100].forEach(pct => {
     const x = lm + chartW * pct / 100;
-    svg += `<line x1="${x}" y1="${topPad - 6}" x2="${x}" y2="${totalH - botPad + 6}" stroke="${pct===0?'#ccc':'#e8e8e8'}" stroke-width="${pct===0?1.5:1}"/>`;
-    svg += `<text x="${x}" y="${topPad - 12}" text-anchor="middle" font-size="9" fill="#bbb">${pct}%</text>`;
+    svg += `<line x1="${x}" y1="${topPad-4}" x2="${x}" y2="${totalH-botPad+4}" stroke="${pct===0?'#ccc':'#e4e4e4'}" stroke-width="${pct===0?1.5:1}"/>`;
+    svg += `<text x="${x}" y="${topPad-8}" text-anchor="middle" font-size="8.5" fill="#bbb">${pct}%</text>`;
   });
 
-  // Limiar 85%
-  svg += `<line x1="${refX}" y1="${topPad - 18}" x2="${refX}" y2="${totalH - botPad + 6}" stroke="#d94f3d" stroke-width="1.5" stroke-dasharray="5,3" opacity=".85"/>`;
-  svg += `<text x="${refX}" y="${topPad - 20}" text-anchor="middle" font-size="8.5" fill="#d94f3d" font-weight="600">85%</text>`;
-
+  // Draw bars
   let y = topPad;
   groups.forEach((g, gi) => {
-    svg += `<text x="${lm - 8}" y="${y + groupLabelH - 7}" text-anchor="end" font-size="10.5" font-weight="700" fill="${g.color}">${g.label}</text>`;
+    svg += `<text x="${lm-8}" y="${y+groupLabelH-7}" text-anchor="end" font-size="11" font-weight="700" fill="${g.color}">${g.label}</text>`;
     y += groupLabelH;
 
     g.bars.forEach(b => {
-      const pct   = b.max > 0 ? b.score / b.max * 100 : 0;
-      const barW  = Math.max(0, chartW * pct / 100);
-      const pctR  = Math.round(pct);
+      const barW = Math.max(0, chartW * b.pct / 100);
 
       // Track
-      svg += `<rect x="${lm}" y="${y}" width="${chartW}" height="${barH}" fill="#eaecf0" rx="4"/>`;
+      svg += `<rect x="${lm}" y="${y}" width="${chartW}" height="${barH}" fill="#e8eaed" rx="4"/>`;
 
-      // Actual bar — colour by performance zone
-      if (barW > 0) {
-        const col = pct < 50 ? '#c0392b' : pct < 70 ? '#c87820' : pct < 85 ? '#8a7000' : b.color;
-        svg += `<rect x="${lm}" y="${y}" width="${barW}" height="${barH}" fill="${col}" rx="4" opacity=".88"/>`;
+      // ±1 EP band (normative reference zone)
+      if (b.mPct !== null) {
+        const bx1 = lm + chartW * Math.max(0, b.mPct - b.sdPct) / 100;
+        const bx2 = lm + chartW * Math.min(100, b.mPct + b.sdPct) / 100;
+        svg += `<rect x="${bx1}" y="${y}" width="${bx2-bx1}" height="${barH}" fill="#94a3b8" opacity=".25" rx="2"/>`;
+        // Mean tick
+        const mx = lm + chartW * b.mPct / 100;
+        svg += `<line x1="${mx}" y1="${y}" x2="${mx}" y2="${y+barH}" stroke="#64748b" stroke-width="2" opacity=".7"/>`;
       }
 
-      // Normative mean tick (vertical line + label)
-      if (b.norm !== null && b.norm !== undefined) {
-        const nx = lm + chartW * b.norm / 100;
-        svg += `<line x1="${nx}" y1="${y+1}" x2="${nx}" y2="${y+barH-1}" stroke="white" stroke-width="2.5" opacity=".9"/>`;
-        svg += `<text x="${nx}" y="${y - 2}" text-anchor="middle" font-size="7" fill="#555">M=${b.norm}%</text>`;
+      // Actual bar — colour by z-score if norms available, else by raw %
+      let col;
+      if (b.z !== null) {
+        col = b.z < -2 ? '#c0392b' : b.z < -1 ? '#e07b20' : b.z < 0 ? b.color : b.color;
+      } else {
+        col = b.pct < 50 ? '#c0392b' : b.pct < 70 ? '#e07b20' : b.color;
+      }
+      if (barW > 0) {
+        svg += `<rect x="${lm}" y="${y}" width="${barW}" height="${barH}" fill="${col}" rx="4" opacity=".85"/>`;
       }
 
       // Row label
-      svg += `<text x="${lm - 6}" y="${y + barH/2 + 4}" text-anchor="end" font-size="10" fill="#333">${b.label}</text>`;
+      svg += `<text x="${lm-6}" y="${y+barH/2+4}" text-anchor="end" font-size="10" fill="#333">${b.label}</text>`;
 
-      // Score right of bar
-      const scoreStr = b.max > 0 ? `${b.score}/${b.max} (${pctR}%)` : '—';
-      svg += `<text x="${lm + barW + 5}" y="${y + barH/2 + 4}" font-size="9" fill="#555">${scoreStr}</text>`;
+      // Score + z-score to the right
+      const scoreStr = b.max > 0 ? `${b.score}/${b.max}` : '—';
+      const zStr     = b.z !== null ? ` z=${b.z.toFixed(1)}` : '';
+      const labelCol = b.z !== null && b.z < -1 ? '#c0392b' : '#555';
+      svg += `<text x="${lm+barW+6}" y="${y+barH/2+4}" font-size="9" fill="${labelCol}">${scoreStr}${zStr}</text>`;
 
       y += barH + barGap;
     });
@@ -1564,23 +1612,20 @@ function drawProfileChart({ s2aAtiva, n2aAtiva, s2aPassiva, n2aPassiva,
   });
 
   // Legend
-  const legY = totalH - 14;
-  svg += `<rect x="${lm}" y="${legY-6}" width="12" height="12" fill="#c0392b" rx="2" opacity=".8"/>`;
-  svg += `<text x="${lm+16}" y="${legY+4}" font-size="8" fill="#888">&lt;50%</text>`;
-  svg += `<rect x="${lm+46}" y="${legY-6}" width="12" height="12" fill="#c87820" rx="2" opacity=".8"/>`;
-  svg += `<text x="${lm+62}" y="${legY+4}" font-size="8" fill="#888">50–69%</text>`;
-  svg += `<rect x="${lm+106}" y="${legY-6}" width="12" height="12" fill="#8a7000" rx="2" opacity=".8"/>`;
-  svg += `<text x="${lm+122}" y="${legY+4}" font-size="8" fill="#888">70–84%</text>`;
-  svg += `<line x1="${lm+178}" y1="${legY}" x2="${lm+194}" y2="${legY}" stroke="#d94f3d" stroke-width="1.5" stroke-dasharray="4,2"/>`;
-  svg += `<text x="${lm+198}" y="${legY+4}" font-size="8" fill="#d94f3d">Limiar 85%</text>`;
+  const legY = totalH - 20;
   if (sub) {
-    svg += `<line x1="${lm+262}" y1="${legY-4}" x2="${lm+262}" y2="${legY+8}" stroke="white" stroke-width="2.5" opacity=".9"/>`;
-    svg += `<rect x="${lm+256}" y="${legY-7}" width="12" height="18" fill="#888" rx="2" opacity=".3"/>`;
-    svg += `<text x="${lm+273}" y="${legY+4}" font-size="8" fill="#555">Traço branco = M normativo (${normLabel})</text>`;
+    svg += `<rect x="${lm}" y="${legY-5}" width="18" height="10" fill="#94a3b8" opacity=".3" rx="2"/>`;
+    svg += `<line x1="${lm+9}" y1="${legY-5}" x2="${lm+9}" y2="${legY+5}" stroke="#64748b" stroke-width="2" opacity=".7"/>`;
+    svg += `<text x="${lm+22}" y="${legY+4}" font-size="8" fill="#777">M ± 1EP normativo</text>`;
+    svg += `<rect x="${lm+130}" y="${legY-5}" width="14" height="10" fill="#c0392b" rx="2" opacity=".8"/>`;
+    svg += `<text x="${lm+148}" y="${legY+4}" font-size="8" fill="#777">z &lt; −2</text>`;
+    svg += `<rect x="${lm+192}" y="${legY-5}" width="14" height="10" fill="#e07b20" rx="2" opacity=".8"/>`;
+    svg += `<text x="${lm+210}" y="${legY+4}" font-size="8" fill="#777">−2 ≤ z &lt; −1</text>`;
+  } else {
+    svg += `<text x="${lm}" y="${legY+4}" font-size="8" fill="#aaa">Sem dados normativos para esta faixa etária</text>`;
   }
 
   svg += '</svg>';
-
   document.getElementById('r-chart-wrap').style.display = '';
   document.getElementById('r-chart').innerHTML = svg;
 }
