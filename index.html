@@ -1086,9 +1086,12 @@ function advance(task) {
   const items = task === '2a' ? I2A : task === '2b' ? I2B : I2C;
   if (S.ci >= items.length - 1) {
     S.ci = 0;
-    if (task === '2a') S.tk === 'comp' ? finish() : showInstr('2b');
-    else if (task === '2b') S.tk !== 'comp' ? showInstr('2c') : finish();
-    else finish();
+    // After 2A → always go to 2B (tk='aware' never reaches 2A)
+    // After 2B → go to 2C only if tk='all'; otherwise finish
+    // After 2C → always finish
+    if      (task === '2a') showInstr('2b');
+    else if (task === '2b') S.tk === 'all' ? showInstr('2c') : finish();
+    else                    finish();
     return;
   }
   S.ci++;
@@ -1149,6 +1152,9 @@ function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNo
 
 function finish() {
   stopTimer();
+  S.blocked = false;
+  go('sr'); // always show results screen immediately — even if render fails below
+  try {
   const dur = (S.el / 60).toFixed(1);
   const tk  = S.tk;
 
@@ -1407,11 +1413,14 @@ function finish() {
     tbody.appendChild(tr);
   });
 
-  go('sr');
   sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all });
+  } catch(e) {
+    console.error('finish() error:', e);
+    document.getElementById('r-meta').textContent = 'Erro ao gerar relatório — ver consola';
+  }
 }
 
-// Clinical interpretation text per task type
+// Clinical interpretation text per task type (legacy — not used)
 function clinicalNote(type, pct, ageM) {
   const ageY = Math.floor(ageM/12);
   if (type === '2A') {
