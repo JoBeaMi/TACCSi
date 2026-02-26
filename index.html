@@ -372,6 +372,40 @@ input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0
 
 /* ── Task breakdown ── */
 .r-tasks { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+
+/* ── Required field markers ── */
+.req { color:#e05252; font-weight:700; }
+.req-note { font-size:.72rem; font-weight:400; color:#999; margin-left:6px; }
+
+/* ── Diagnosis section ── */
+.diag-wrap { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.diag-opt {
+  display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+  border:1.5px solid #e2e8f0; border-radius:8px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.diag-opt:has(input:checked) { border-color:var(--teal); background:#f0fafa; }
+.diag-opt input[type=radio] { margin-top:3px; accent-color:var(--teal); flex-shrink:0; }
+.diag-main { display:flex; flex-direction:column; gap:2px; }
+.diag-name { font-size:.88rem; font-weight:600; color:var(--dark); }
+.diag-name em { font-style:normal; color:var(--teal); }
+.diag-desc { font-size:.77rem; color:#888; }
+
+/* ── Domain checkboxes (revealed on selection) ── */
+.dom-wrap {
+  display:none; margin:-2px 0 4px 28px;
+  padding:10px 14px; background:#f8fafc;
+  border:1px solid #dde3ea; border-radius:0 0 8px 8px;
+  border-top:none;
+}
+.dom-wrap.active { display:block; }
+.dom-hint { font-size:.75rem; color:#666; font-weight:600; margin-bottom:6px; }
+.dom-grid { display:flex; flex-wrap:wrap; gap:4px 16px; }
+.dom-cb { display:flex; align-items:center; gap:5px; font-size:.82rem; color:#444; cursor:pointer; }
+.dom-cb input { accent-color:var(--teal); }
+.dom-cb-w { flex-basis:100%; }
+.bio-input { width:100%; padding:7px 10px; border:1px solid #cdd5de; border-radius:6px;
+             font-size:.85rem; margin-bottom:2px; }
 .r-chart-wrap { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:16px 20px; margin-bottom:16px; }
 .r-chart-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .r-chart-hdr h3 { margin:0; font-size:.85rem; color:var(--dark); }
@@ -548,20 +582,28 @@ tr:last-child td { border-bottom:none; }
     <div><h2>Nova Avaliação</h2><p>Dados da criança e da sessão</p></div>
   </div>
   <div class="s-body">
-    <div class="s-sec">Criança</div>
+
+    <div class="s-sec">Criança <span class="req-note">* obrigatório</span></div>
     <div class="fg2">
-      <div class="fg fw"><label>Nome ou código</label><input id="fnm" type="text" placeholder="Ex: Maria S. ou C_01" autocomplete="off"></div>
-      <div class="fg"><label>Data de nascimento</label><input id="fdob" type="date" onchange="calcAge()"></div>
-      <div class="fg"><label>Idade calculada</label><div class="age-dsp" id="adsp">—</div></div>
+      <div class="fg fw"><label>Nome completo da criança <span class="req">*</span></label>
+        <input id="fnm" type="text" placeholder="Nome completo" autocomplete="off"></div>
+      <div class="fg"><label>Data de nascimento <span class="req">*</span></label>
+        <input id="fdob" type="date" onchange="calcAge()"></div>
+      <div class="fg"><label>Idade calculada</label>
+        <div class="age-dsp" id="adsp">—</div></div>
       <div class="fg"><label>Sexo</label>
         <select id="fsx"><option value="">— Selecionar —</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
       </div>
-      <div class="fg"><label>Escola / Instituição</label><input id="fsch" type="text" autocomplete="off"></div>
+      <div class="fg"><label>Escola / Instituição <span class="req">*</span></label>
+        <input id="fsch" type="text" autocomplete="off"></div>
     </div>
+
     <div class="s-sec" style="margin-top:22px">Sessão</div>
     <div class="fg2">
-      <div class="fg"><label>Terapeuta</label><input id="fex" type="text" autocomplete="off"></div>
-      <div class="fg"><label>Data</label><input id="fdt" type="date"></div>
+      <div class="fg"><label>Terapeuta <span class="req">*</span></label>
+        <input id="fex" type="text" autocomplete="off"></div>
+      <div class="fg"><label>Data <span class="req">*</span></label>
+        <input id="fdt" type="date"></div>
       <div class="fg fw"><label>Tarefas a administrar</label>
         <select id="ftk">
           <option value="all">2A + 2B + 2C  (protocolo completo)</option>
@@ -569,9 +611,106 @@ tr:last-child td { border-bottom:none; }
           <option value="aware">2C apenas  (Consciência)</option>
         </select>
       </div>
-      <div class="fg fw"><label>Observações</label><input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
+      <div class="fg fw"><label>Observações</label>
+        <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
     </div>
-  </div>
+
+    <div class="s-sec" style="margin-top:22px">Diagnóstico clínico <span class="req-note">selecionar um (opcional)</span></div>
+    <div class="diag-wrap">
+
+      <label class="diag-opt" id="diag-pdl-lbl">
+        <input type="radio" name="diag" value="PDL" onchange="onDiagChange()">
+        <div class="diag-main">
+          <span class="diag-name">Perturbação do Desenvolvimento da Linguagem <em>(PDL)</em></span>
+          <span class="diag-desc">Dificuldades linguísticas persistentes sem causa biomédica identificada</span>
+        </div>
+      </label>
+      <div class="dom-wrap" id="dom-PDL">
+        <div class="dom-hint">Domínios comprometidos:</div>
+        <div class="dom-grid">
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="fon"> Fonológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="mor"> Morfológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="sin"> Sintático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="sem"> Semântico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="pra"> Pragmático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-PDL" value="voc"> Baixo vocabulário</label>
+          <label class="dom-cb dom-cb-w"><input type="checkbox" name="dom-PDL" value="proc"> Apresenta conhecimento linguístico mas dificuldades no processamento em discurso espontâneo e conversação</label>
+        </div>
+      </div>
+
+      <label class="diag-opt" id="diag-etl-lbl">
+        <input type="radio" name="diag" value="ETL" onchange="onDiagChange()">
+        <div class="diag-main">
+          <span class="diag-name">Emergência Tardia da Linguagem <em>(ETL)</em></span>
+          <span class="diag-desc">Atraso no início da linguagem sem outros indicadores de perturbação estabelecida</span>
+        </div>
+      </label>
+      <div class="dom-wrap" id="dom-ETL">
+        <div class="dom-hint">Domínios comprometidos:</div>
+        <div class="dom-grid">
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="fon"> Fonológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="mor"> Morfológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="sin"> Sintático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="sem"> Semântico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="pra"> Pragmático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-ETL" value="voc"> Baixo vocabulário</label>
+          <label class="dom-cb dom-cb-w"><input type="checkbox" name="dom-ETL" value="proc"> Apresenta conhecimento linguístico mas dificuldades no processamento em discurso espontâneo e conversação</label>
+        </div>
+      </div>
+
+      <label class="diag-opt" id="diag-bio-lbl">
+        <input type="radio" name="diag" value="BIO" onchange="onDiagChange()">
+        <div class="diag-main">
+          <span class="diag-name">Perturbação da Linguagem associada a condição biomédica</span>
+          <span class="diag-desc">Ex: síndrome, lesão neurológica, perturbação do neurodesenvolvimento</span>
+        </div>
+      </label>
+      <div class="dom-wrap" id="dom-BIO">
+        <div class="dom-hint">Condição biomédica:</div>
+        <input id="fbio" type="text" placeholder="Nome da condição" class="bio-input" autocomplete="off">
+        <div class="dom-hint" style="margin-top:10px">Domínios comprometidos:</div>
+        <div class="dom-grid">
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="fon"> Fonológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="mor"> Morfológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="sin"> Sintático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="sem"> Semântico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="pra"> Pragmático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-BIO" value="voc"> Baixo vocabulário</label>
+          <label class="dom-cb dom-cb-w"><input type="checkbox" name="dom-BIO" value="proc"> Apresenta conhecimento linguístico mas dificuldades no processamento em discurso espontâneo e conversação</label>
+        </div>
+      </div>
+
+      <label class="diag-opt" id="diag-fra-lbl">
+        <input type="radio" name="diag" value="FRA" onchange="onDiagChange()">
+        <div class="diag-main">
+          <span class="diag-name">Perfil linguístico frágil, sem diagnóstico formal</span>
+          <span class="diag-desc">Preocupações clínicas sem critérios completos para diagnóstico estabelecido</span>
+        </div>
+      </label>
+      <div class="dom-wrap" id="dom-FRA">
+        <div class="dom-hint">Domínios comprometidos:</div>
+        <div class="dom-grid">
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="fon"> Fonológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="mor"> Morfológico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="sin"> Sintático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="sem"> Semântico</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="pra"> Pragmático</label>
+          <label class="dom-cb"><input type="checkbox" name="dom-FRA" value="voc"> Baixo vocabulário</label>
+          <label class="dom-cb dom-cb-w"><input type="checkbox" name="dom-FRA" value="proc"> Apresenta conhecimento linguístico mas dificuldades no processamento em discurso espontâneo e conversação</label>
+        </div>
+      </div>
+
+      <label class="diag-opt" id="diag-nd-lbl">
+        <input type="radio" name="diag" value="ND" onchange="onDiagChange()">
+        <div class="diag-main">
+          <span class="diag-name">Sem diagnóstico / aplicação em investigação</span>
+          <span class="diag-desc">Avaliação normativa ou contexto de investigação</span>
+        </div>
+      </label>
+
+    </div><!-- /diag-wrap -->
+
+  </div><!-- /s-body -->
   <div class="s-foot">
     <button class="btn btn-ghost btn-sm" onclick="go('sw')">Cancelar</button>
     <button class="btn btn-teal" onclick="startSession()">Continuar →</button>
@@ -671,6 +810,7 @@ tr:last-child td { border-bottom:none; }
       <div class="r-child-info">
         <div class="r-child-name" id="r-name">—</div>
         <div class="r-child-meta" id="r-childmeta">—</div>
+      <div id="r-diag" style="font-size:.78rem;color:#2a6a8a;margin-top:4px;display:none">—</div>
       </div>
       <div class="r-child-age">
         <div class="ca-v" id="r-agestr">—</div>
@@ -895,7 +1035,7 @@ const csc = (r,n) => Math.round(((r - n.M) / n.SD) * 15 + 100);
 /* ══════════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════════ */
-let S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',
+let S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},
           am:0, resp:{}, t0:null, ti:null, el:0, cur:null, ci:0, blocked:false };
 const key = (task, n) => task + '|' + n;
 
@@ -941,18 +1081,63 @@ function stopTimer() { if (S.ti) { clearInterval(S.ti); S.ti = null; } }
 /* ══════════════════════════════════════════════════════
    SESSION START
 ══════════════════════════════════════════════════════ */
+function onDiagChange() {
+  ['PDL','ETL','BIO','FRA'].forEach(d => {
+    const wrap = document.getElementById('dom-' + d);
+    const radio = document.querySelector(`input[name="diag"][value="${d}"]`);
+    if (wrap) wrap.classList.toggle('active', radio && radio.checked);
+  });
+}
+
+function getDiagData() {
+  const radio = document.querySelector('input[name="diag"]:checked');
+  if (!radio) return { code:'', label:'', bioCondition:'', domains:[] };
+  const code = radio.value;
+  const labels = {
+    PDL: 'Perturbação do Desenvolvimento da Linguagem (PDL)',
+    ETL: 'Emergência Tardia da Linguagem (ETL)',
+    BIO: 'Perturbação da Linguagem — condição biomédica',
+    FRA: 'Perfil linguístico frágil, sem diagnóstico formal',
+    ND:  'Sem diagnóstico / investigação',
+  };
+  const domLabels = {
+    fon:'Fonológico', mor:'Morfológico', sin:'Sintático',
+    sem:'Semântico',  pra:'Pragmático',  voc:'Baixo vocabulário',
+    proc:'Conhecimento linguístico presente mas dificuldades no processamento em discurso espontâneo'
+  };
+  const checked = [...document.querySelectorAll(`input[name="dom-${code}"]:checked`)];
+  const domains = checked.map(c => domLabels[c.value] || c.value);
+  const bioCondition = code === 'BIO' ? (document.getElementById('fbio')?.value.trim() || '') : '';
+  const label = code === 'BIO' && bioCondition
+    ? `Perturbação da Linguagem associada a ${bioCondition}`
+    : labels[code] || code;
+  return { code, label, bioCondition, domains };
+}
+
 function startSession() {
-  const nm = document.getElementById('fnm').value.trim();
-  const db = document.getElementById('fdob').value;
-  if (!nm) { toast('⚠ Introduza o nome ou código'); return; }
-  if (!db) { toast('⚠ Introduza a data de nascimento'); return; }
-  S.name = nm; S.dob = db;
-  S.sex  = document.getElementById('fsx').value;
-  S.sch  = document.getElementById('fsch').value;
-  S.ex   = document.getElementById('fex').value || '—';
-  S.dt   = document.getElementById('fdt').value || new Date().toISOString().slice(0,10);
+  const nm  = document.getElementById('fnm').value.trim();
+  const db  = document.getElementById('fdob').value;
+  const sch = document.getElementById('fsch').value.trim();
+  const ex  = document.getElementById('fex').value.trim();
+  const dt  = document.getElementById('fdt').value;
+  const errs = [];
+  if (!nm)  errs.push('nome completo da criança');
+  if (!db)  errs.push('data de nascimento');
+  if (!sch) errs.push('escola / instituição');
+  if (!ex)  errs.push('terapeuta');
+  if (!dt)  errs.push('data da sessão');
+  if (errs.length) { toast('⚠ Preencha: ' + errs.join(', ')); return; }
+  if (document.querySelector('input[name="diag"][value="BIO"]:checked')) {
+    if (!document.getElementById('fbio')?.value.trim()) {
+      toast('⚠ Indique o nome da condição biomédica'); return;
+    }
+  }
+  S.name = nm; S.dob = db; S.sex = document.getElementById('fsx').value;
+  S.sch  = sch; S.ex  = ex;
+  S.dt   = dt;
   S.tk   = document.getElementById('ftk').value;
   S.nt   = document.getElementById('fnt').value;
+  S.diag = getDiagData();
   S.resp = {}; S.t0 = Date.now(); S.blocked = false;
   startTimer();
   showInstr(S.tk === 'aware' ? '2c' : '2a');
@@ -1261,6 +1446,21 @@ function finish() {
   document.getElementById('r-agestr').textContent = ageStr;
   document.getElementById('r-childmeta').textContent =
     `Nascimento: ${S.dob} · ${S.am} meses · ${S.sex==='F'?'Feminino':S.sex==='M'?'Masculino':'—'} · ${S.sch||'—'} · Protocolo: ${tk==='all'?'Completo':tk==='comp'?'Só Compreensão':'Só Consciência'}`;
+
+  // Diagnosis block in results
+  const diagEl = document.getElementById('r-diag');
+  if (diagEl) {
+    const d = S.diag;
+    if (d && d.code && d.code !== 'ND') {
+      let html = `<strong>Diagnóstico:</strong> ${d.label}`;
+      if (d.domains && d.domains.length)
+        html += ` &nbsp;·&nbsp; <span style="color:#555">Domínios: ${d.domains.join(', ')}</span>`;
+      diagEl.innerHTML = html;
+      diagEl.style.display = '';
+    } else {
+      diagEl.style.display = 'none';
+    }
+  }
 
   const canC    = tk==='all' && S.am>=64 && S.am<=82;
   const outRange= S.am>0 && (S.am<64 || S.am>82);
