@@ -721,20 +721,20 @@ tr:last-child td { border-bottom:none; }
           <option value="aware">2C apenas  (Consciência)</option>
         </select>
         <div id="ftk-warn" style="display:none;margin-top:6px;padding:8px 11px;background:#fff8e1;border:1px solid #f0c040;border-radius:7px;font-size:.78rem;color:#7a5c00;">
-⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos. Pode administrar o protocolo completo se considerar clinicamente adequado.
+⚠ A tarefa de consciência sintática (2C) não foi desenhada para crianças com menos de 5;0 anos. Pode administrar o protocolo completo se considerar clinicamente adequado.
         </div>
       </div>
       <div class="fg fw"><label>Observações</label>
         <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
       <div class="fg fw" style="background:#f0f4f8;border-radius:9px;padding:11px 14px;margin-top:4px;font-size:.82rem;color:#2a3a4a">
         <div style="font-weight:600;margin-bottom:6px">📖 Modo de administração</div>
-        <div style="margin-bottom:6px">Até aos 7 anos, as frases devem ser lidas pela terapeuta. A partir dos 7 anos, a criança pode ler as frases — nesse caso, o instrumento avalia a <em>compreensão leitora</em> destas estruturas sintáticas, não apenas a compreensão oral.</div>
+        <div style="margin-bottom:6px">Até aos 7 anos, as frases devem ser lidas pela terapeuta. A partir dos 7 anos, se dominar a leitura e se for esse o seu propósito, a criança pode ler as frases. Lembrar que esse caso, o teste avalia a <em>compreensão destas estruturas sintática na modalidade escrita</em> </div>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
           <input type="checkbox" id="fread" style="width:auto;height:auto;margin:0">
-          A criança vai ler as frases (avaliação da compreensão leitora)
+          O teste vai ser usado na modalidade escrita. A criança vai ler as frases (avaliação da compreensão leitora)
         </label>
         <div style="margin-top:8px;padding:7px 10px;background:#fff8e1;border:1px solid #f0c040;border-radius:6px;color:#7a5c00">
-          🔔 Em breve estarão disponíveis áudios para a versão oral. Na versão lida, a leitura deve ser feita pela própria criança.
+          🔔 Em breve estarão disponíveis áudios para a versão oral. Na versão escrita, a leitura deve ser feita pela própria criança.
         </div>
       </div>
       <div class="fg fw" style="margin-top:4px">
@@ -795,7 +795,7 @@ tr:last-child td { border-bottom:none; }
         <input type="radio" name="diag" value="BIO" onchange="onDiagChange()">
         <div class="diag-main">
           <span class="diag-name">Perturbação da Linguagem associada a condição biomédica</span>
-          <span class="diag-desc">Ex: síndrome, lesão neurológica, perturbação do neurodesenvolvimento</span>
+          <span class="diag-desc">Ex: síndrome, lesão neurológica, surdez, perturbação do desenvolvimento intelectual</span>
         </div>
       </label>
       <div class="dom-wrap" id="dom-BIO">
@@ -1047,7 +1047,7 @@ const img2B = (type, n) => n === 'Exemplo'
 const I2A = [
   {n:'Exemplo',bl:1,t:'Ativa',   c:1, s:'O macaco encontrou o gato.'},
   {n:'1', bl:0,t:'Passiva',c:2, s:'A rainha está a ser calçada pela menina.'},
-  {n:'2', bl:0,t:'Ativa',  c:1, s:'A zebra está a lamber a girafa.'},
+  {n:'2', bl:0,t:'Ativa',  c:1, s:'A zebra está a lamber/morder a girafa.'},
   {n:'3', bl:0,t:'Passiva',c:1, s:'O polícia está a ser fotografado pelo bombeiro.'},
   {n:'4', bl:0,t:'Passiva',c:2, s:'A mãe está a ser procurada pela menina.'},
   {n:'5', bl:0,t:'Passiva',c:3, s:'A avó está a ser tapada pela menina.'},
@@ -1066,7 +1066,7 @@ const I2A = [
 // 2B items 1-15: Relativas, 16-30: Interrogativas
 // c: 'E' = esquerda, 'D' = direita
 const I2B = [
-  {n:'Exemplo',bl:1,type:'Relativas',  t:'RS',c:'E',s:'Escolhe o cavalo que está a comer erva.'},
+  {n:'Exemplo',bl:1,type:'Relativas',  t:'RS',c:'D',s:'Escolhe o cavalo que está a comer erva.'},
   {n:'1', bl:0,type:'Relativas',  t:'RO',c:'D',s:'Mostra-me o gato que o cão está a lamber.'},
   {n:'2', bl:0,type:'Relativas',  t:'RO',c:'E',s:'Mostra-me o menino que o pai está a molhar.'},
   {n:'3', bl:0,type:'Relativas',  t:'RS',c:'E',s:'Mostra-me a menina que está a empurrar a bruxa.'},
@@ -1201,7 +1201,7 @@ function calcAge() {
 
   const warnEl = document.getElementById('ftk-warn');
   if (m < 60) {
-    warnEl.innerHTML = `⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos. ` +
+    warnEl.innerHTML = `⚠ A tarefa de consciência sintática (2C) não foi desenhada para crianças com menos de 5;0 anos. ` +
       `Pode administrar o protocolo completo se considerar clinicamente adequado.`;
     warnEl.style.display = '';
   } else {
@@ -1626,16 +1626,16 @@ function finish() {
       `Esta criança tem ${ageStr} anos (${S.am} meses). ` +
       `Os dados normativos do TACCSi foram recolhidos com crianças entre 5;4 e 6;10 anos, pelo que não é possível calcular o Score Composto Padronizado (CSC) nem comparar com valores normativos do instrumento.<br><br>` +
       `<strong>O que é possível interpretar:</strong> O perfil por estrutura abaixo tem valor clínico descritivo independente das normas. ` +
-      `A assimetria entre estruturas canónicas (ativas, RS, IS) e não-canónicas (passivas, RO, IO) é teoricamente motivada e clinicamente informativa a qualquer idade. ` +
-      `As notas de interpretação referem valores da literatura de aquisição do PE como referência descritiva — não como normas do instrumento.`;
+      `A assimetria entre estruturas canónicas (ativas, relativas de sujeito, interrogativas de sujeito) e não-canónicas (passivas, relativas de objeto, interrogativas de objeto) é teoricamente motivada e clinicamente informativa em qualquer idade. ` +
+      `As notas de interpretação referem valores da literatura de aquisição do Português Europeu como referência descritiva, não como normas do instrumento.`;
 
     const oldMsg = `<strong>📋 Nota metodológica — criança fora da faixa normativa validada (5;4–6;10 anos)</strong><br>` +
       `Esta criança tem ${ageStr} anos (${S.am} meses). ` +
       `Os dados normativos do TACCSi foram recolhidos com crianças entre 5;4 e 6;10 anos, pelo que não é possível calcular o Score Composto Padronizado (CSC).<br><br>` +
       `<strong>O que é possível interpretar:</strong> O perfil por estrutura abaixo tem valor clínico descritivo. ` +
-      `Para crianças mais velhas, a literatura documenta que crianças DT de 8-11 anos atingem ~95% nas estruturas de extracção de objeto (RO e IO) — ` +
+      `Para crianças mais velhas, a literatura documenta que crianças com desenvolvimento típico de 8-11 anos produzem ~95% estruturas de extracção de objeto (relativas e interregotaivas de objeto), assim não ` +
       `significativamente acima dos valores dos grupos PDL e ASD+PDL da mesma faixa (~52-61%). ` +
-      `Dificuldades nestas estruturas em crianças desta idade são clinicamente mais significativas do que em crianças pré-escolares, ` +
+      `se esperam dificuldades nestas estruturas em crianças desta idade são clinicamente mais significativas do que em crianças pré-escolares, ` +
       `uma vez que a janela de aquisição típica já terá sido ultrapassada. ` +
       `As notas de interpretação referem esses valores como referência descritiva — não como normas do instrumento.`;
 
