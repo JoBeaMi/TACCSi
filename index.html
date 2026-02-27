@@ -700,6 +700,12 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="fg"><label>Escola / Instituição <span class="req">*</span></label>
         <input id="fsch" type="text" autocomplete="off"></div>
+      <div class="fg fw" style="margin-top:2px">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
+          <input type="checkbox" id="flnm" style="width:auto;height:auto;margin:0">
+          Português língua não materna
+        </label>
+      </div>
     </div>
 
     <div class="s-sec" style="margin-top:22px">Sessão</div>
@@ -715,13 +721,31 @@ tr:last-child td { border-bottom:none; }
           <option value="aware">2C apenas  (Consciência)</option>
         </select>
         <div id="ftk-warn" style="display:none;margin-top:6px;padding:8px 11px;background:#fff8e1;border:1px solid #f0c040;border-radius:7px;font-size:.78rem;color:#7a5c00;">
-          ⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos.
-          A seleção foi ajustada para <strong>Compreensão apenas</strong>.
-          Pode alterar manualmente se necessário.
+⚠ A tarefa de consciência sintática (2C) não está validada para crianças com menos de 5;0 anos. Pode administrar o protocolo completo se considerar clinicamente adequado.
         </div>
       </div>
       <div class="fg fw"><label>Observações</label>
         <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
+      <div class="fg fw" style="background:#f0f4f8;border-radius:9px;padding:11px 14px;margin-top:4px;font-size:.82rem;color:#2a3a4a">
+        <div style="font-weight:600;margin-bottom:6px">📖 Modo de administração</div>
+        <div style="margin-bottom:6px">Até aos 7 anos, as frases devem ser lidas pela terapeuta. A partir dos 7 anos, a criança pode ler as frases — nesse caso, o instrumento avalia a <em>compreensão leitora</em> destas estruturas sintáticas, não apenas a compreensão oral.</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="fread" style="width:auto;height:auto;margin:0">
+          A criança vai ler as frases (avaliação da compreensão leitora)
+        </label>
+        <div style="margin-top:8px;padding:7px 10px;background:#fff8e1;border:1px solid #f0c040;border-radius:6px;color:#7a5c00">
+          🔔 Em breve estarão disponíveis áudios para a versão oral. Na versão lida, a leitura deve ser feita pela própria criança.
+        </div>
+      </div>
+      <div class="fg fw" style="margin-top:4px">
+        <label style="font-weight:600">📂 Carregar avaliação anterior <span style="font-weight:400;color:#666">(opcional — para comparação)</span></label>
+        <div id="t1-drop" style="border:2px dashed #b0c4d8;border-radius:9px;padding:14px 16px;margin-top:6px;text-align:center;cursor:pointer;color:#5a7a9a;font-size:.85rem;transition:background .15s" onclick="document.getElementById('t1-file').click()" ondragover="event.preventDefault();this.style.background='#eef4fa'" ondragleave="this.style.background=''" ondrop="handleT1Drop(event)">
+          Clique ou arraste o ficheiro <strong>.json</strong> da avaliação anterior
+        </div>
+        <input type="file" id="t1-file" accept=".json" style="display:none" onchange="handleT1File(this)">
+        <div id="t1-info" style="display:none;margin-top:8px;padding:9px 12px;background:#eef6ee;border:1px solid #7bc47b;border-radius:7px;font-size:.82rem;color:#2a5a2a"></div>
+        <div id="t1-clear" style="display:none;margin-top:4px"><button onclick="clearT1()" style="font-size:.78rem;background:none;border:none;color:#c04040;cursor:pointer;padding:0">✕ Remover avaliação anterior</button></div>
+      </div>
     </div>
 
     <div class="s-sec" style="margin-top:22px">Diagnóstico clínico <span class="req">*</span> <span class="req-note">selecione:</span></div>
@@ -812,7 +836,7 @@ tr:last-child td { border-bottom:none; }
       <label class="diag-opt" id="diag-nd-lbl">
         <input type="radio" name="diag" value="ND" onchange="onDiagChange()">
         <div class="diag-main">
-          <span class="diag-name">Sem diagnóstico / aplicação em investigação</span>
+          <span class="diag-name">Sem diagnóstico / 1ª avaliação</span>
           <span class="diag-desc">Avaliação normativa ou contexto de investigação</span>
         </div>
       </label>
@@ -908,6 +932,7 @@ tr:last-child td { border-bottom:none; }
     <div class="r-hdr-r">
       <span id="sync-status"></span>
       <button class="btn btn-out btn-sm" onclick="doCSV()">⬇ CSV</button>
+      <button class="btn btn-out btn-sm" id="btn-save-json" onclick="doSaveJSON()" style="background:#eef6ee;border-color:#7bc47b;color:#2a5a2a">💾 Guardar ficheiro da criança</button>
       <button class="btn btn-white btn-sm" onclick="window.print()">🖨 Imprimir</button>
     </div>
   </div>
@@ -967,6 +992,7 @@ tr:last-child td { border-bottom:none; }
 
     <!-- Task breakdown -->
     <div class="r-tasks" id="r-tasks"></div>
+    <div id="r-comparison" style="display:none"></div>
 
     <!-- Item table -->
     <div class="tbl-w">
@@ -1258,8 +1284,12 @@ function startSession() {
   S.sch  = sch; S.ex  = ex;
   S.dt   = dt;
   S.tk   = document.getElementById('ftk').value;
+  S.lnm  = document.getElementById('flnm')?.checked || false;
+  S.read = document.getElementById('fread')?.checked || false;
   S.nt   = document.getElementById('fnt').value;
   S.diag = getDiagData();
+  // Generate unique child code if not loaded from previous eval
+  if (!S.uid) S.uid = 'TACCSi-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
   S.resp = {}; S.t0 = Date.now(); S.blocked = false;
   startTimer();
   showInstr(S.tk === 'aware' ? '2c' : '2a');
@@ -1567,7 +1597,7 @@ function finish() {
   const ageStr = `${ageY};${String(ageM2).padStart(2,'0')}`;
   document.getElementById('r-agestr').textContent = ageStr;
   document.getElementById('r-childmeta').textContent =
-    `Nascimento: ${S.dob} · ${S.am} meses · ${S.sex==='F'?'Feminino':S.sex==='M'?'Masculino':'—'} · ${S.sch||'—'} · Protocolo: ${tk==='all'?'Completo':tk==='comp'?'Só Compreensão':'Só Consciência'}`;
+    `Código: ${S.uid} · Nascimento: ${S.dob} · ${S.am} meses · ${S.sex==='F'?'Feminino':S.sex==='M'?'Masculino':'—'}${S.lnm?' · Português LNM':''} · ${S.sch||'—'} · Protocolo: ${tk==='all'?'Completo':tk==='comp'?'Só Compreensão':'Só Consciência'}${S.read?' · a criança vai ler as frases':''}`;
 
   // Diagnosis block in results
   const diagEl = document.getElementById('r-diag');
@@ -1970,6 +2000,44 @@ function finish() {
     tbody.appendChild(tr);
   });
 
+  // Build scores snapshot for JSON export and comparison
+  const snap = {
+    s2a, s2b, s2c, tot, mx, csc: canC ? csc(tot, NORMS[ng]) : undefined,
+    s2aAtiva, s2aPassiva, n2aAtiva, n2aPassiva,
+    s2bRS, s2bRO, s2bIS, s2bIO, n2bRS, n2bRO, n2bIS, n2bIO,
+    s2cGram, s2cConc, s2cOrd, n2cGram, n2cConc, n2cOrd,
+    pAtiva:   n2aAtiva   > 0 ? Math.round(s2aAtiva/n2aAtiva*100)   : null,
+    pPassiva: n2aPassiva > 0 ? Math.round(s2aPassiva/n2aPassiva*100): null,
+    pRS:  n2bRS > 0 ? Math.round(s2bRS/n2bRS*100) : null,
+    pRO:  n2bRO > 0 ? Math.round(s2bRO/n2bRO*100) : null,
+    pIS:  n2bIS > 0 ? Math.round(s2bIS/n2bIS*100) : null,
+    pIO:  n2bIO > 0 ? Math.round(s2bIO/n2bIO*100) : null,
+    pGram: n2cGram > 0 ? Math.round(s2cGram/n2cGram*100) : null,
+    pConc: n2cConc > 0 ? Math.round(s2cConc/n2cConc*100) : null,
+    pOrd:  n2cOrd  > 0 ? Math.round(s2cOrd/n2cOrd*100)   : null,
+    zAtiva:   canC ? zScore(s2aAtiva/Math.max(n2aAtiva,1),   'Active',  ng) : null,
+    zPassiva: canC ? zScore(s2aPassiva/Math.max(n2aPassiva,1),'Passive', ng) : null,
+    zRS:  canC ? zScore(s2bRS/Math.max(n2bRS,1), 'RelSubj', ng) : null,
+    zRO:  canC ? zScore(s2bRO/Math.max(n2bRO,1), 'RelObj',  ng) : null,
+    zIS:  canC ? zScore(s2bIS/Math.max(n2bIS,1), 'WhQSubj', ng) : null,
+    zIO:  canC ? zScore(s2bIO/Math.max(n2bIO,1), 'WhQObj',  ng) : null,
+    dt: S.dt, am: S.am
+  };
+  window._snapT2 = snap;
+  document.getElementById('btn-save-json').onclick = () => saveJSON(snap);
+
+  // Comparison section
+  const compEl = document.getElementById('r-comparison');
+  if (compEl) {
+    if (S.t1) {
+      compEl.innerHTML = buildComparison(snap, S.t1, canC, ng);
+      compEl.style.display = '';
+      sendComparison(snap, S.t1, canC, ng);
+    } else {
+      compEl.style.display = 'none';
+    }
+  }
+
   sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all,
     s2aAtiva, s2aPassiva, s2bRS, s2bRO, s2bIS, s2bIO,
     s2cGram, s2cConc, s2cOrd });
@@ -2165,6 +2233,8 @@ function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all,
   });
   const payload = {
     timestamp:    new Date().toISOString(),
+    uid:          S.uid,
+    tipo:         'avaliacao',
     data:         S.dt,
     terapeuta:    S.ex,
     crianca:      S.name,
@@ -2173,6 +2243,8 @@ function sendToSheets({ s2a, s2b, s2c, tot, mx, dur, all,
     sexo:         S.sex,
     escola:       S.sch,
     tarefas:      S.tk,
+    lnm:          S.lnm ? 'Sim' : 'Não',
+    modo_leitura: S.read ? 'Criança vai ler' : 'Terapeuta vai ler',
     diagnostico:  d.label  || '',
     cond_biomedica: d.bioCondition || '',
     dominios:     (d.domains || []).join('; '),
@@ -2228,7 +2300,10 @@ function doCSV() {
   I2B.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2b',i.n)]?.correct){ if(i.t==='RS') s2bRS++; else if(i.t==='RO') s2bRO++; else if(i.t==='IS') s2bIS++; else s2bIO++; }});
   I2C.filter(i=>!i.bl).forEach(i=>{ if(S.resp[key('2c',i.n)]?.correct){ if(i.sub==='Gram') s2cGram++; else if(i.sub==='Conc') s2cConc++; else s2cOrd++; }});
   const d = S.diag || {};
+  const lnm  = S.lnm  ? 'Sim' : 'Não';
+  const read = S.read ? 'Criança vai ler' : 'Terapeuta vai ler';
   out += `\n# Resumo\nCriança,${S.name}\nDOB,${S.dob}\nIdade_meses,${S.am}\nSexo,${S.sex}\nData,${S.dt}\nTerapeuta,${S.ex}\nEscola,${S.sch}\nTarefas,${S.tk}\n`;
+  out += `LNM,${lnm}\nModo_leitura,${read}\n`;
   out += `Diagnostico,"${d.label||''}"\nCondicao_biomedica,"${d.bioCondition||''}"\nDominios,"${(d.domains||[]).join('; ')}"\n`;
   out += `Score_2A,${s2a}\nScore_2A_Ativas,${s2aAtiva}\nScore_2A_Passivas,${s2aPassiva}\n`;
   out += `Score_2B,${s2b}\nScore_2B_RS,${s2bRS}\nScore_2B_RO,${s2bRO}\nScore_2B_IS,${s2bIS}\nScore_2B_IO,${s2bIO}\n`;
@@ -2248,10 +2323,11 @@ function doCSV() {
 ══════════════════════════════════════════════════════ */
 function newSession() {
   stopTimer();
-  S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false };
+  S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false,uid:'',t1:null };
   ['fnm','fdob','fsx','fsch','fex','fnt','fbio'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
   document.querySelectorAll('input[name="diag"]').forEach(r => r.checked = false);
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+  S.lnm = false; S.read = false;
   ['PDL','ETL','BIO','FRA'].forEach(d => { const w=document.getElementById('dom-'+d); if(w) w.classList.remove('active'); });
   document.getElementById('ftk').value = 'all';
   document.getElementById('adsp').textContent = '—';
@@ -2282,6 +2358,279 @@ function showAbout() {
     '· Brígida — Criação das ilustrações originais<br><br>' +
     '<em>© 2026 Joana Batalha, Maria Lobo &amp; Joana Miguel. Todos os direitos reservados.</em>';
   document.getElementById('modal').classList.add('on');
+}
+
+/* ══════════════════════════════════════════════════════
+   T1 — LOAD PREVIOUS EVALUATION
+══════════════════════════════════════════════════════ */
+function handleT1Drop(e) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file) loadT1File(file);
+}
+function handleT1File(input) {
+  if (input.files[0]) loadT1File(input.files[0]);
+}
+function loadT1File(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.uid || !data.name) throw new Error('Ficheiro inválido');
+      S.t1 = data;
+      document.getElementById('t1-info').style.display = '';
+      document.getElementById('t1-info').innerHTML =
+        `✅ <strong>${data.name}</strong> · Código: ${data.uid} · Avaliação anterior: ${data.dt} (${data.am} meses)`;
+      document.getElementById('t1-clear').style.display = '';
+      document.getElementById('t1-drop').style.borderColor = '#7bc47b';
+      // Pre-fill name if empty
+      if (!document.getElementById('fnm').value) document.getElementById('fnm').value = data.name;
+    } catch(err) {
+      toast('⚠ Ficheiro inválido ou corrompido');
+    }
+  };
+  reader.readAsText(file);
+}
+function clearT1() {
+  S.t1 = null;
+  document.getElementById('t1-info').style.display = 'none';
+  document.getElementById('t1-clear').style.display = 'none';
+  document.getElementById('t1-drop').style.borderColor = '#b0c4d8';
+  document.getElementById('t1-file').value = '';
+}
+
+/* ══════════════════════════════════════════════════════
+   SAVE JSON (child profile)
+══════════════════════════════════════════════════════ */
+function saveJSON(scores) {
+  const data = {
+    uid:    S.uid,
+    name:   S.name,
+    dob:    S.dob,
+    sex:    S.sex,
+    sch:    S.sch,
+    am:     S.am,
+    dt:     S.dt,
+    tk:     S.tk,
+    diag:   S.diag,
+    lnm:    S.lnm,
+    ...scores
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `TACCSi_${S.uid}_${S.dt}.json`;
+  a.click();
+  toast('✅ Ficheiro guardado!');
+}
+
+/* ══════════════════════════════════════════════════════
+   COMPARISON SECTION
+══════════════════════════════════════════════════════ */
+function buildComparison(t2, t1, canC2, ng2) {
+  const interval = t2.am - t1.am;
+  const pct = (s, n) => n > 0 ? Math.round(s/n*100) : null;
+  const arrow = (v2, v1, threshold=5) => {
+    const d = v2 - v1;
+    if (d > threshold) return '<span style="color:#2a8a2a;font-weight:700">↑</span>';
+    if (d < -threshold) return '<span style="color:#c04040;font-weight:700">↓</span>';
+    return '<span style="color:#888">→</span>';
+  };
+  const zArrow = (z2, z1) => {
+    if (z2 === null || z1 === null) return '';
+    const d = z2 - z1;
+    if (d > 0.3) return '<span style="color:#2a8a2a;font-weight:700">↑</span>';
+    if (d < -0.3) return '<span style="color:#c04040;font-weight:700">↓</span>';
+    return '<span style="color:#888">→</span>';
+  };
+  const fmt = v => v !== null && v !== undefined ? v+'%' : '—';
+  const fmtZ = v => v !== null && v !== undefined ? v.toFixed(1) : '—';
+
+  // Scores T2
+  const pAtiva2   = pct(t2.s2aAtiva,   t2.n2aAtiva);
+  const pPassiva2 = pct(t2.s2aPassiva, t2.n2aPassiva);
+  const pRS2      = pct(t2.s2bRS,  t2.n2bRS);
+  const pRO2      = pct(t2.s2bRO,  t2.n2bRO);
+  const pIS2      = pct(t2.s2bIS,  t2.n2bIS);
+  const pIO2      = pct(t2.s2bIO,  t2.n2bIO);
+  const pGram2    = pct(t2.s2cGram, t2.n2cGram);
+  const pConc2    = pct(t2.s2cConc, t2.n2cConc);
+  const pOrd2     = pct(t2.s2cOrd,  t2.n2cOrd);
+
+  // Scores T1
+  const pAtiva1   = t1.pAtiva;
+  const pPassiva1 = t1.pPassiva;
+  const pRS1      = t1.pRS;
+  const pRO1      = t1.pRO;
+  const pIS1      = t1.pIS;
+  const pIO1      = t1.pIO;
+  const pGram1    = t1.pGram;
+  const pConc1    = t1.pConc;
+  const pOrd1     = t1.pOrd;
+
+  // Asymmetries
+  const asymPass2 = pAtiva2 !== null && pPassiva2 !== null ? pAtiva2 - pPassiva2 : null;
+  const asymPass1 = pAtiva1 !== null && pPassiva1 !== null ? pAtiva1 - pPassiva1 : null;
+  const asymRO2   = pRS2 !== null && pRO2 !== null ? pRS2 - pRO2 : null;
+  const asymRO1   = pRS1 !== null && pRO1 !== null ? pRS1 - pRO1 : null;
+  const asymIO2   = pIS2 !== null && pIO2 !== null ? pIS2 - pIO2 : null;
+  const asymIO1   = pIS1 !== null && pIO1 !== null ? pIS1 - pIO1 : null;
+
+  // z-scores T2 (only if canC2)
+  const zAtiva2   = canC2 ? zScore(t2.s2aAtiva/Math.max(t2.n2aAtiva,1), 'Active', ng2) : null;
+  const zPassiva2 = canC2 ? zScore(t2.s2aPassiva/Math.max(t2.n2aPassiva,1), 'Passive', ng2) : null;
+  const zRS2      = canC2 ? zScore(t2.s2bRS/Math.max(t2.n2bRS,1), 'RelSubj', ng2) : null;
+  const zRO2      = canC2 ? zScore(t2.s2bRO/Math.max(t2.n2bRO,1), 'RelObj', ng2) : null;
+  const zIS2      = canC2 ? zScore(t2.s2bIS/Math.max(t2.n2bIS,1), 'WhQSubj', ng2) : null;
+  const zIO2      = canC2 ? zScore(t2.s2bIO/Math.max(t2.n2bIO,1), 'WhQObj', ng2) : null;
+
+  const hasZ1 = t1.zPassiva !== undefined;
+  const canC1 = hasZ1;
+
+  const row = (label, v1, v2, z1=null, z2=null) => {
+    const a = (v1 !== null && v2 !== null) ? arrow(v2, v1) : '';
+    const za = zArrow(z2, z1);
+    const zCols = (canC1 || canC2)
+      ? `<td style="color:#555">${fmtZ(z1)}</td><td style="color:#555">${fmtZ(z2)} ${za}</td>`
+      : '';
+    return `<tr>
+      <td>${label}</td>
+      <td>${fmt(v1)}</td>
+      <td>${fmt(v2)} ${a}</td>
+      ${zCols}
+    </tr>`;
+  };
+
+  const asymRow = (label, a1, a2) => {
+    if (a1 === null && a2 === null) return '';
+    const a = (a1 !== null && a2 !== null) ? arrow(a2, a1, 8) : '';
+    const interp = a2 !== null ? (a2 < 15 ? ' <span style="color:#2a8a2a;font-size:.75rem">(assimetria reduzida)</span>' : a2 > 40 ? ' <span style="color:#c04040;font-size:.75rem">(assimetria marcada)</span>' : '') : '';
+    return `<tr style="background:#f8f5ff">
+      <td style="padding-left:20px;color:#555;font-size:.82rem">Δ ${label}</td>
+      <td style="color:#555">${a1 !== null ? a1+'pp' : '—'}</td>
+      <td style="color:#555">${a2 !== null ? a2+'pp' : '—'} ${a}${interp}</td>
+      ${(canC1||canC2)?'<td></td><td></td>':''}
+    </tr>`;
+  };
+
+  const zHeader = (canC1 || canC2) ? '<th>z T1</th><th>z T2</th>' : '';
+
+  let compHtml = `
+  <div style="margin-top:28px;padding:20px 22px;background:#f5f0ff;border:2px solid #7c5cbf;border-radius:14px">
+    <div style="font-size:1rem;font-weight:700;color:#4a2a8a;margin-bottom:4px">📊 Comparação com avaliação anterior</div>
+    <div style="font-size:.8rem;color:#666;margin-bottom:16px">
+      T1: ${t1.dt} (${t1.am} meses) &nbsp;→&nbsp; T2: ${t2.dt} (${t2.am} meses) &nbsp;·&nbsp; Intervalo: ${interval} meses · Código: ${t1.uid}
+    </div>`;
+
+  // CSC comparison
+  if (canC1 && canC2 && t1.csc !== undefined && t2.csc !== undefined) {
+    const cscArrow = arrow(t2.csc, t1.csc, 3);
+    const cscNote = (t2.csc - t1.csc > 0 && zPassiva2 !== null && t1.zPassiva !== null && (zPassiva2 - t1.zPassiva) <= 0.2)
+      ? `<div style="font-size:.78rem;color:#7a5c00;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:6px">⚠ O CSC aumentou ${t2.csc-t1.csc} pontos, mas os z-scores mantiveram-se estáveis — o progresso é consistente com o desenvolvimento esperado para a idade, sem evidência de recuperação face ao grupo normativo.</div>`
+      : '';
+    compHtml += `<div style="display:flex;gap:24px;margin-bottom:16px;align-items:center">
+      <div style="text-align:center;padding:12px 20px;background:#fff;border-radius:10px;border:1px solid #c0a8ef">
+        <div style="font-size:.72rem;color:#888;margin-bottom:2px">CSC T1</div>
+        <div style="font-size:1.6rem;font-weight:700;color:#4a2a8a">${t1.csc}</div>
+      </div>
+      <div style="font-size:2rem">${cscArrow}</div>
+      <div style="text-align:center;padding:12px 20px;background:#fff;border-radius:10px;border:1px solid #c0a8ef">
+        <div style="font-size:.72rem;color:#888;margin-bottom:2px">CSC T2</div>
+        <div style="font-size:1.6rem;font-weight:700;color:#4a2a8a">${t2.csc}</div>
+      </div>
+    </div>${cscNote}`;
+  } else if (canC1 !== canC2) {
+    compHtml += `<div style="font-size:.8rem;color:#888;margin-bottom:12px">⚠ O CSC não é comparável entre os dois momentos — uma das avaliações está fora da faixa normativa (5;4–6;10).</div>`;
+  }
+
+  // Structure table
+  compHtml += `<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px">
+    <thead><tr style="background:#e8e0f8;text-align:left">
+      <th style="padding:6px 8px">Estrutura</th>
+      <th style="padding:6px 8px">T1</th>
+      <th style="padding:6px 8px">T2 ↑↓→</th>
+      ${zHeader}
+    </tr></thead>
+    <tbody style="font-size:.81rem">`;
+
+  if (pAtiva1 !== null || pAtiva2 !== null) {
+    compHtml += row('Ativas (canónicas)', pAtiva1, pAtiva2, t1.zAtiva||null, zAtiva2);
+    compHtml += row('Passivas longas', pPassiva1, pPassiva2, t1.zPassiva||null, zPassiva2);
+    compHtml += asymRow('ativas/passivas', asymPass1, asymPass2);
+  }
+  if (pRS1 !== null || pRS2 !== null) {
+    compHtml += row('Relativas de sujeito', pRS1, pRS2, t1.zRS||null, zRS2);
+    compHtml += row('Relativas de objeto', pRO1, pRO2, t1.zRO||null, zRO2);
+    compHtml += asymRow('RS/RO', asymRO1, asymRO2);
+  }
+  if (pIS1 !== null || pIS2 !== null) {
+    compHtml += row('Interrogativas-Qu sujeito', pIS1, pIS2, t1.zIS||null, zIS2);
+    compHtml += row('Interrogativas-Qu objeto', pIO1, pIO2, t1.zIO||null, zIO2);
+    compHtml += asymRow('IS/IO', asymIO1, asymIO2);
+  }
+  if (pGram1 !== null || pGram2 !== null) {
+    compHtml += `<tr style="background:#f5f5f5"><td colspan="${(canC1||canC2)?5:3}" style="padding:4px 8px;font-size:.76rem;color:#888">Consciência sintática</td></tr>`;
+    compHtml += row('Frases gramaticais', pGram1, pGram2);
+    compHtml += row('Violações de concordância', pConc1, pConc2);
+    compHtml += row('Violações de ordem', pOrd1, pOrd2);
+  }
+
+  compHtml += `</tbody></table>
+  <div style="font-size:.73rem;color:#888;margin-top:8px">
+    ↑↓ variação &gt;5pp nas percentagens, &gt;0.3 nos z-scores &nbsp;·&nbsp; Δ = assimetria entre estruturas canónicas e não-canónicas (pp = pontos percentuais)
+  </div>
+  </div>`;
+
+  return compHtml;
+}
+
+/* ══════════════════════════════════════════════════════
+   SEND COMPARISON TO SHEETS
+══════════════════════════════════════════════════════ */
+function sendComparison(t2, t1, canC2, ng2) {
+  if (!SHEETS_URL) return;
+  const d = v => v !== null && v !== undefined ? v : '';
+  const delta = (v2, v1) => (v2 !== null && v1 !== null) ? v2 - v1 : '';
+  const payload = {
+    tipo:          'comparacao',
+    timestamp:     new Date().toISOString(),
+    uid:           t1.uid,
+    crianca:       S.name,
+    dob:           S.dob,
+    dt_t1:         t1.dt,
+    am_t1:         t1.am,
+    dt_t2:         t2.dt,
+    am_t2:         t2.am,
+    intervalo_meses: t2.am - t1.am,
+    terapeuta:     S.ex,
+    csc_t1:        d(t1.csc),
+    csc_t2:        d(t2.csc),
+    delta_csc:     delta(t2.csc, t1.csc),
+    pAtiva_t1:     d(t1.pAtiva),   pAtiva_t2:   d(t2.pAtiva),   delta_pAtiva:   delta(t2.pAtiva, t1.pAtiva),
+    pPassiva_t1:   d(t1.pPassiva), pPassiva_t2: d(t2.pPassiva), delta_pPassiva: delta(t2.pPassiva, t1.pPassiva),
+    asym_pass_t1:  t1.pAtiva !== null && t1.pPassiva !== null ? t1.pAtiva - t1.pPassiva : '',
+    asym_pass_t2:  t2.pAtiva !== null && t2.pPassiva !== null ? t2.pAtiva - t2.pPassiva : '',
+    pRS_t1:  d(t1.pRS),  pRS_t2:  d(t2.pRS),  delta_pRS:  delta(t2.pRS, t1.pRS),
+    pRO_t1:  d(t1.pRO),  pRO_t2:  d(t2.pRO),  delta_pRO:  delta(t2.pRO, t1.pRO),
+    asym_ro_t1:    t1.pRS !== null && t1.pRO !== null ? t1.pRS - t1.pRO : '',
+    asym_ro_t2:    t2.pRS !== null && t2.pRO !== null ? t2.pRS - t2.pRO : '',
+    pIS_t1:  d(t1.pIS),  pIS_t2:  d(t2.pIS),  delta_pIS:  delta(t2.pIS, t1.pIS),
+    pIO_t1:  d(t1.pIO),  pIO_t2:  d(t2.pIO),  delta_pIO:  delta(t2.pIO, t1.pIO),
+    asym_io_t1:    t1.pIS !== null && t1.pIO !== null ? t1.pIS - t1.pIO : '',
+    asym_io_t2:    t2.pIS !== null && t2.pIO !== null ? t2.pIS - t2.pIO : '',
+    pGram_t1: d(t1.pGram), pGram_t2: d(t2.pGram), delta_pGram: delta(t2.pGram, t1.pGram),
+    pConc_t1: d(t1.pConc), pConc_t2: d(t2.pConc), delta_pConc: delta(t2.pConc, t1.pConc),
+    pOrd_t1:  d(t1.pOrd),  pOrd_t2:  d(t2.pOrd),  delta_pOrd:  delta(t2.pOrd, t1.pOrd),
+    zPassiva_t1: d(t1.zPassiva), zPassiva_t2: canC2 ? d(t2.zPassiva) : '',
+    zRO_t1:  d(t1.zRO),  zRO_t2:  canC2 ? d(t2.zRO) : '',
+    zIO_t1:  d(t1.zIO),  zIO_t2:  canC2 ? d(t2.zIO) : '',
+  };
+  fetch(SHEETS_URL, { method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload) })
+  .then(() => toast('✅ Comparação guardada no Sheets'))
+  .catch(() => toast('⚠ Comparação não guardada — verifique ligação'));
 }
 
 /* Init */
