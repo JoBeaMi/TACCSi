@@ -1,4 +1,4 @@
-# TACCSi — Instruções de Instalação
+# TACCSi 
 
 ## Estrutura de ficheiros
 
@@ -37,38 +37,3 @@ TACCSi/
 ```
 
 **Total: 82 ficheiros de imagem**
-
----
-
-## Passo 1 — Google Sheets
-
-1. Vai a [sheets.google.com](https://sheets.google.com), cria uma folha nova
-2. **Extensões > Apps Script** → apaga o código existente → cola o conteúdo de `Code.gs`
-3. **Guardar** → **Implementar > Nova implementação**
-   - Tipo: `Aplicação Web`
-   - Executar como: `Eu`
-   - Quem acede: `Qualquer pessoa`
-4. Copia o **URL da aplicação Web**
-
-## Passo 2 — Ligar à app
-
-Abre `index.html`, encontra esta linha e cola o URL:
-```javascript
-const SHEETS_URL = 'https://script.google.com/macros/s/SEU_URL/exec';
-```
-
-## Passo 3 — GitHub Pages
-
-1. Cria repositório no GitHub
-2. Upload de todos os ficheiros mantendo a estrutura (pasta `img/` na raiz)
-3. **Settings > Pages** → Source: `main` / `root` → Save
-4. URL disponível em ~1 minuto
-
----
-
-## Notas
-
-- A frase aparece em **todos os itens** para o terapeuta ler em voz alta
-- O botão 🔊 está preparado para áudio futuro (adicionar `audio/2A_1.mp3` etc.)
-- A criança nunca recebe feedback de certo/errado
-- Normas CSC válidas para **5;4–6;10 anos** com protocolo completo (2A+2B+2C)
