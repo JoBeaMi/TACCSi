@@ -665,11 +665,11 @@ tr:last-child td { border-bottom:none; }
       <button class="btn btn-main btn-lg" onclick="go('ss')">▶ Iniciar Avaliação</button>
       <label class="btn btn-out btn-sm" style="cursor:pointer" title="Reabrir relatório a partir de um ficheiro JSON guardado">
         📂 Reabrir relatório
-        <input type="file" accept=".json" style="display:none" onchange="handleReopenFile(this)">
+        <input type="file" accept=".json" style="opacity:0;position:absolute;width:0;height:0" onchange="handleReopenFile(this)">
       </label>
       <label id="xl-import-btn" class="btn btn-out btn-sm" style="cursor:pointer;display:none" title="Importar avaliação a partir do Excel de dados">
         📊 Importar do Excel
-        <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelImport(this)">
+        <input type="file" accept=".xlsx,.xls,.csv" style="opacity:0;position:absolute;width:0;height:0" onchange="handleExcelImport(this)">
       </label>
       <button class="btn btn-out btn-sm" onclick="showAbout()">ℹ Sobre</button>
     </div>
@@ -2598,6 +2598,8 @@ let _xlRows = [];
 function handleExcelImport(input) {
   const file = input.files[0];
   if (!file) return;
+  toast('📊 A ler ficheiro…');
+  if (typeof XLSX === 'undefined') { toast('⚠ Biblioteca XLSX não carregada — verifica a ligação à internet'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     try {
