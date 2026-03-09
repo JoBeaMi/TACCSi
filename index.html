@@ -220,6 +220,12 @@ input[type=radio], input[type=checkbox] { width:auto; height:auto; padding:0; bo
   display:none;
 }
 .sent-bar.read-mode .read-mode-label { display:block; }
+.read-reminder {
+  background:#fff8e6; border-bottom:1px solid #f0d080;
+  color:#7a5800; font-size:.75rem; font-weight:600;
+  padding:6px 20px; flex-shrink:0; text-align:center;
+  letter-spacing:.01em;
+}
 .sent-ex {
   background:var(--teal); color:#fff;
   font-size:.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
@@ -294,24 +300,24 @@ input[type=radio], input[type=checkbox] { width:auto; height:auto; padding:0; bo
   flex:1; display:flex; align-items:center; justify-content:center;
   gap:16px; padding:16px 24px; min-height:0; overflow:hidden;
 }
-.c2c-grumpf { height:100%; max-height:200px; object-fit:contain; flex-shrink:0; }
+.c2c-grumpf { height:100%; max-height:clamp(160px,35vh,320px); object-fit:contain; flex-shrink:0; }
 .c2c-faces {
-  display:flex; gap:20px; padding:16px 24px; flex-shrink:0;
+  display:flex; gap:16px; padding:16px 20px 20px; flex-shrink:0;
   background:var(--bg); border-top:2px solid var(--border);
   justify-content:center;
 }
 .face-btn {
-  flex:1; max-width:260px; border-radius:16px; border:4px solid transparent;
+  flex:1; max-width:280px; border-radius:20px; border:5px solid transparent;
   background:#fff; cursor:pointer; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:8px;
-  padding:16px 20px; box-shadow:0 2px 10px rgba(0,0,0,.07);
+  align-items:center; justify-content:center; gap:10px;
+  padding:18px 16px; box-shadow:0 2px 12px rgba(0,0,0,.08);
   transition:border-color .12s, transform .1s, box-shadow .12s;
-  min-height:120px; -webkit-user-select:none; user-select:none;
+  min-height:clamp(140px,26vh,220px); -webkit-user-select:none; user-select:none;
 }
-.face-btn img { height:clamp(90px, 16vh, 150px); pointer-events:none; }
-.face-btn span { font-size:.9rem; font-weight:700; color:var(--muted); pointer-events:none; }
+.face-btn img { height:clamp(100px,20vh,180px); pointer-events:none; }
+.face-btn span { font-size:clamp(.95rem,2.2vw,1.15rem); font-weight:800; color:var(--muted); pointer-events:none; }
 .face-btn:active { transform:scale(.96); }
-.face-btn.sel    { border-color:var(--sel); background:#eaf7f7; box-shadow:0 0 0 3px var(--sel-glow); }
+.face-btn.sel    { border-color:var(--sel); background:#eaf7f7; box-shadow:0 0 0 4px var(--sel-glow); }
 
 /* ══════════ RESULTS ══════════ */
 #sr { background:#f0f4f8; overflow-y:auto; }
@@ -944,6 +950,7 @@ tr:last-child td { border-bottom:none; }
     <div class="sent-audio no-audio" id="2b-audio" title="Reproduzir áudio">🔊</div>
     <div class="sent-text" id="2b-sent">—</div>
   </div>
+  <div class="read-reminder" id="2b-reminder" style="display:none">⚠ A criança deve ler sozinha, sem ajuda, e responder com base na sua própria leitura.</div>
   <div id="2b-ex-panel" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(240,244,248,.97);flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;gap:0"></div>
   <div class="slide-area" id="2b-area">
     <img class="slide-img" id="2b-img" src="" alt="">
@@ -965,6 +972,7 @@ tr:last-child td { border-bottom:none; }
     <div class="sent-audio no-audio" id="2c-audio" title="Reproduzir áudio">🔊</div>
     <div class="sent-text" id="2c-sent">—</div>
   </div>
+  <div class="read-reminder" id="2c-reminder" style="display:none">⚠ A criança deve ler sozinha, sem ajuda, e responder com base na sua própria leitura.</div>
   <div id="2c-ex-panel" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(240,244,248,.97);flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;gap:0"></div>
   <div class="c2c-wrap" id="2c-wrap">
     <div class="c2c-top" id="2c-top">
@@ -1228,17 +1236,36 @@ const key = (task, n) => task + '|' + n;
 /* ══════════════════════════════════════════════════════
    AUDIO + READING MODE
 ══════════════════════════════════════════════════════ */
+function showRereadBtn(barId) {
+  const bar = document.getElementById(barId);
+  if (!bar) return;
+  const btn = bar.querySelector('.reread-btn');
+  if (btn) btn.style.display = 'flex';
+}
+
 function applyReadMode() {
-  // Apply reading mode styling to all sent-bars
   document.querySelectorAll('.sent-bar').forEach(bar => {
     if (S.read) {
       bar.classList.add('read-mode');
-      // Insert read-mode-label if not present
       if (!bar.querySelector('.read-mode-label')) {
         const lbl = document.createElement('div');
         lbl.className = 'read-mode-label';
         lbl.textContent = '📖 A criança lê';
         bar.insertBefore(lbl, bar.firstChild);
+      }
+      // Reread button — shown after first read
+      let rr = bar.querySelector('.reread-btn');
+      if (!rr) {
+        rr = document.createElement('button');
+        rr.className = 'reread-btn';
+        rr.title = 'Permitir segunda leitura';
+        rr.innerHTML = '🔁';
+        rr.style.cssText = 'display:none;width:38px;height:38px;border-radius:50%;border:2px solid #3db8b8;background:#e8f4ff;font-size:1rem;cursor:pointer;flex-shrink:0;transition:opacity .2s';
+        rr.onclick = () => {
+          rr.style.display = 'none';
+          S.blocked = false;
+        };
+        bar.appendChild(rr);
       }
     } else {
       bar.classList.remove('read-mode');
@@ -1400,10 +1427,17 @@ const INSTRS = {
       'Vais ouvir duas vezes uma frase.',
       'Depois de ouvires a frase, aponta para a imagem certa.'
     ],
+    introRead: [
+      'Vamos jogar um jogo.',
+      'Vai aparecer uma frase no ecrã. Lê a frase — podes lê-la duas vezes se quiseres.',
+      'Depois de leres a frase, aponta para a imagem certa.'
+    ],
     exIntro: 'Vais ouvir duas vezes uma frase sobre um macaco, um gato e um rato. Depois de ouvires a frase, aponta para a imagem certa.',
+    exIntroRead: 'Vai aparecer uma frase sobre um macaco, um gato e um rato. Lê a frase e aponta para a imagem certa.',
     exSent: 'O macaco encontrou o gato.',
     exFeedback: 'Sabes qual é a imagem certa? É a primeira imagem. Agora que já percebeste como se joga, vamos continuar.',
-    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para a imagem diretamente no ecrã', 'O exemplo não é pontuado — avance manualmente']
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para a imagem diretamente no ecrã', 'O exemplo não é pontuado — avance manualmente'],
+    nlRead: ['A criança lê a frase em silêncio — pode reler uma vez', 'Botão 🔁 permite nova leitura', 'A criança aponta para a imagem diretamente no ecrã', 'O exemplo não é pontuado — avance manualmente']
   },
   '2b': {
     t: 'Grupo B — Compreensão de Relativas e Interrogativas',
@@ -1413,10 +1447,17 @@ const INSTRS = {
       'Para cada frase há uma imagem com dois quadrados.',
       'Tens de apontar para o quadrado certo.'
     ],
+    introRead: [
+      'Neste jogo, vai aparecer uma frase no ecrã.',
+      'Para cada frase há uma imagem com dois quadrados.',
+      'Lê a frase — podes lê-la duas vezes — e aponta para o quadrado certo.'
+    ],
     exIntro: 'Ouve a frase e aponta para o quadrado certo.',
+    exIntroRead: 'Lê a frase e aponta para o quadrado certo.',
     exSent: 'Escolhe o cavalo que está a comer erva.',
     exFeedback: 'Escolheste o cavalo castanho? Muito bem. Então já sabes como se joga. Vamos continuar.',
-    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança toca na metade esquerda ou direita da imagem', 'O exemplo não é pontuado — avance manualmente']
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança toca na metade esquerda ou direita da imagem', 'O exemplo não é pontuado — avance manualmente'],
+    nlRead: ['A criança lê a frase em silêncio — pode reler uma vez', 'Botão 🔁 permite nova leitura', 'A criança toca na metade esquerda ou direita da imagem', 'O exemplo não é pontuado — avance manualmente']
   },
   '2c': {
     t: 'Grupo C — Consciência Sintática',
@@ -1427,10 +1468,18 @@ const INSTRS = {
       'Ouve bem o que o Grumpf diz. Ele vai dizer uma frase duas vezes.',
       'Quando ele falar bem, aponta para a cara contente. Quando ele falar mal, aponta para a cara triste.'
     ],
+    introRead: [
+      'Neste jogo, vamos ajudar o Grumpf.',
+      'O Grumpf veio de outro planeta e não sabe falar bem a nossa língua.',
+      'Vai aparecer uma frase no ecrã. Lê o que o Grumpf diz — podes ler duas vezes.',
+      'Quando ele escrever bem, aponta para a cara contente. Quando escrever mal, aponta para a cara triste.'
+    ],
     exIntro: 'Ouve o que o Grumpf diz e aponta para a cara contente ou para a cara triste.',
+    exIntroRead: 'Lê o que o Grumpf escreveu e aponta para a cara contente ou para a cara triste.',
     exSent: 'Eu é alto.',
     exFeedback: 'Não está certo, pois não? O Grumpf devia dizer: Eu sou alto. Por isso apontamos para a cara triste. Vamos continuar.',
-    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para 😊 ou 😟', 'O exemplo não é pontuado — avance manualmente']
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para 😊 ou 😟', 'O exemplo não é pontuado — avance manualmente'],
+    nlRead: ['A criança lê a frase em silêncio — pode reler uma vez', 'Botão 🔁 permite nova leitura', 'A criança aponta para 😊 ou 😟', 'O exemplo não é pontuado — avance manualmente']
   }
 };
 
@@ -1440,8 +1489,11 @@ function showInstr(task) {
   const d = INSTRS[task];
   document.getElementById('i-title').textContent   = d.t;
   document.getElementById('i-sub').textContent     = d.s;
-  document.getElementById('i-intro').innerHTML     = d.intro.map(l => `<p style="margin-bottom:6px">"${l}"</p>`).join('');
-  document.getElementById('i-notes').innerHTML     = d.nl.map(x => `<li>${x}</li>`).join('');
+  const introLines = (S.read && d.introRead) ? d.introRead : d.intro;
+  const noteLines  = (S.read && d.nlRead)    ? d.nlRead    : d.nl;
+  const exI = (S.read && d.exIntroRead) ? d.exIntroRead : d.exIntro;
+  document.getElementById('i-intro').innerHTML     = introLines.map(l => `<p style="margin-bottom:6px">${l}</p>`).join('');
+  document.getElementById('i-notes').innerHTML     = noteLines.map(x => `<li>${x}</li>`).join('');
   go('si');
 }
 function beginTask() { S.cur = _instrTask; S.ci = 0; render(_instrTask); }
@@ -1457,11 +1509,12 @@ function render(task) { S.cur = task; S.blocked = false;
 
 function exPanelHTML(phase, task) {
   const d = INSTRS[task];
+  const exI = (S.read && d.exIntroRead) ? d.exIntroRead : d.exIntro;
   if (phase === 'intro') {
     return `
       <div style="max-width:420px;width:100%">
         <div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2a8a8a;margin-bottom:14px">Exemplo</div>
-        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:20px">"${d.exIntro}"</p>
+        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:20px">${exI}</p>
         <div style="background:#fff;border-left:3px solid #3db8b8;border-radius:0 8px 8px 0;padding:12px 18px;margin-bottom:24px">
           <div style="font-size:.65rem;color:#6b8faa;margin-bottom:4px">Frase</div>
           <div style="color:#1a2e4a;font-size:1.05rem;font-weight:700">${d.exSent}</div>
@@ -1472,7 +1525,7 @@ function exPanelHTML(phase, task) {
     return `
       <div style="max-width:420px;width:100%">
         <div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2a8a8a;margin-bottom:14px">Feedback do exemplo</div>
-        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:28px">"${d.exFeedback}"</p>
+        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:28px">${d.exFeedback}</p>
         <button class="btn btn-teal" onclick="advanceFromEx('${task}')">Continuar →</button>
       </div>`;
   }
@@ -1507,6 +1560,7 @@ function render2A() {
   applyReadMode();
   const item = I2A[S.ci];
   if (item.bl) { showExPanel('2a', 'intro'); }
+  if (S.read && !item.bl) showRereadBtn('2a-sent-bar');
   document.getElementById('2a-nm').textContent = S.name;
   document.getElementById('2a-pf').style.width = (S.ci / I2A.length * 100) + '%';
   document.getElementById('2a-pc').textContent = (S.ci+1) + '/' + I2A.length;
@@ -1535,6 +1589,7 @@ function render2B() {
   applyReadMode();
   const item = I2B[S.ci];
   if (item.bl) { showExPanel('2b', 'intro'); }
+  if (S.read && !item.bl) showRereadBtn('2b-sent-bar');
   const isI  = !item.bl && item.type === 'Interrogativas';
   document.getElementById('2b-nm').textContent  = S.name;
   document.getElementById('2b-tk').textContent  = item.bl ? '2B · Exemplo' : isI ? '2B · Interrogativas' : '2B · Relativas';
@@ -1583,6 +1638,7 @@ function render2C() {
   applyReadMode();
   const item = I2C[S.ci];
   if (item.bl) { showExPanel('2c', 'intro'); }
+  if (S.read && !item.bl) showRereadBtn('2c-sent-bar');
   document.getElementById('2c-nm').textContent  = S.name;
   document.getElementById('2c-pf').style.width  = (S.ci / I2C.length * 100) + '%';
   document.getElementById('2c-pc').textContent  = (S.ci+1) + '/' + I2C.length;
