@@ -2558,6 +2558,115 @@ function clearT1() {
 }
 
 /* ══════════════════════════════════════════════════════
+   REOPEN REPORT FROM JSON
+══════════════════════════════════════════════════════ */
+function handleReopenFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.resp) { toast('⚠ Ficheiro sem dados de resposta — guarde uma nova avaliação para ter esta funcionalidade'); return; }
+      S.uid  = data.uid  || '';
+      S.name = data.name || '';
+      S.dob  = data.dob  || '';
+      S.sex  = data.sex  || '';
+      S.sch  = data.sch  || '';
+      S.am   = data.am   || 0;
+      S.dt   = data.dt   || '';
+      S.tk   = data.tk   || 'all';
+      S.diag = data.diag || {};
+      S.lnm  = data.lnm  || false;
+      S.read = data.read || false;
+      S.el   = data.el   || 0;
+      S.nt   = data.nt   || '';
+      S.resp = data.resp || {};
+      S.t1   = null;
+      S.blocked = false;
+      finish();
+    } catch(err) { toast('⚠ Ficheiro inválido ou corrompido'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ══════════════════════════════════════════════════════
+   EXCEL IMPORT (superadministradora only)
+══════════════════════════════════════════════════════ */
+let _xlRows = [];
+
+function handleExcelImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      if (!rows.length) { toast('⚠ Ficheiro vazio'); return; }
+      _xlRows = rows;
+      showXlPicker(rows);
+    } catch(err) { toast('⚠ Erro ao ler ficheiro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showXlPicker(rows) {
+  document.getElementById('xl-sub').textContent = rows.length + ' avaliação(ões) encontrada(s)';
+  const list = document.getElementById('xl-list');
+  list.innerHTML = rows.map((r, i) => {
+    const name = r.crianca || r.nome || '—';
+    const dt   = r.data || r.timestamp || '—';
+    const am   = r.idade_meses ? (Math.floor(r.idade_meses/12) + ';' + String(r.idade_meses%12).padStart(2,'0')) : '—';
+    const diag = r.diagnostico || '—';
+    return '<div onclick="loadXlRow(' + i + ')" style="padding:12px 14px;border-radius:10px;cursor:pointer;border:1px solid #e0e8f0;margin-bottom:8px" ' +
+      'onmouseover="this.style.background=\'#f0f7ff\'" onmouseout="this.style.background=\'\'">' +
+      '<div style="font-weight:700;color:#1a2e4a;font-size:.92rem">' + name + '</div>' +
+      '<div style="font-size:.76rem;color:#6b8faa;margin-top:3px">' + dt + ' · ' + am + ' anos · ' + diag + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('xl-modal').style.display = 'flex';
+}
+
+function loadXlRow(i) {
+  document.getElementById('xl-modal').style.display = 'none';
+  const r = _xlRows[i];
+  S.name = r.crianca || r.nome || '';
+  S.dob  = r.dob || '';
+  S.sex  = r.sexo || '';
+  S.sch  = r.escola || '';
+  S.am   = Number(r.idade_meses) || 0;
+  S.dt   = r.data || r.timestamp || '';
+  S.tk   = r.tarefas || 'all';
+  S.lnm  = r.lnm == 1 || r.lnm === 'TRUE';
+  S.read = r.modo_leitura == 1 || r.modo_leitura === 'TRUE';
+  S.el   = (Number(r.duracao_min) || 0) * 60;
+  S.nt   = r.observacoes || '';
+  S.uid  = r.uid || (String(S.name).replace(/\s+/g,'_') + '_' + S.dt);
+  S.diag = { code: r.diagnostico || '', bio: r.cond_biomedica || '', dom: r.dominios || '' };
+  S.t1   = null;
+  S.blocked = false;
+  S.resp = {};
+  Object.keys(r).forEach(col => {
+    const m = col.match(/^(2[ABCabc])_([^_]+)_resp$/);
+    if (!m) return;
+    const task = m[1].toLowerCase();
+    const n    = m[2];
+    const resp = r[col];
+    const cor  = r[col.replace('_resp','_correct')];
+    if (resp !== '' && resp !== null && resp !== undefined) {
+      S.resp[task + '|' + n] = {
+        resp:    isNaN(resp) ? resp : Number(resp),
+        correct: cor == 1 || cor === 'TRUE',
+        sk: 0
+      };
+    }
+  });
+  finish();
+}
+
+/* ══════════════════════════════════════════════════════
    SAVE JSON (child profile)
 ══════════════════════════════════════════════════════ */
 function saveJSON(scores) {
