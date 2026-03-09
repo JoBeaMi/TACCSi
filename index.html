@@ -192,6 +192,34 @@ input[type=radio], input[type=checkbox] { width:auto; height:auto; padding:0; bo
   display:flex; align-items:center; gap:10px;
   flex-shrink:0;
 }
+/* Reading mode — sentence is the main element */
+.sent-bar.read-mode {
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 28px 20px;
+  background:linear-gradient(135deg,#f0f7ff 0%,#e8f4ff 100%);
+  border-bottom:3px solid #3db8b8;
+  flex-shrink:0;
+}
+.sent-bar.read-mode .sent-text {
+  font-size:clamp(1.4rem, 4vw, 2.2rem);
+  text-align:center;
+  color:#1a2e4a;
+  font-weight:700;
+  font-style:normal;
+  line-height:1.4;
+  width:100%;
+}
+.sent-bar.read-mode .sent-audio {
+  display:none;
+}
+.read-mode-label {
+  font-size:.65rem; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:#3db8b8; margin-bottom:10px;
+  display:none;
+}
+.sent-bar.read-mode .read-mode-label { display:block; }
 .sent-ex {
   background:var(--teal); color:#fff;
   font-size:.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
@@ -209,7 +237,7 @@ input[type=radio], input[type=checkbox] { width:auto; height:auto; padding:0; bo
 .sent-audio.no-audio { opacity:.3; cursor:default; pointer-events:none; }
 .sent-text {
   font-size:clamp(1rem, 2.5vw, 1.5rem);
-  font-weight:600; font-style:italic; color:var(--navy); line-height:1.35;
+  font-weight:600; color:var(--navy); line-height:1.35;
   flex:1;
 }
 
@@ -731,7 +759,7 @@ tr:last-child td { border-bottom:none; }
         <input id="fnt" type="text" placeholder="Opcional" autocomplete="off"></div>
       <div class="fg fw" style="background:#f0f4f8;border-radius:9px;padding:11px 14px;margin-top:4px;font-size:.82rem;color:#2a3a4a">
         <div style="font-weight:600;margin-bottom:6px">📖 Modo de administração</div>
-        <div style="margin-bottom:6px">Até aos 7 anos, as frases devem ser lidas pela terapeuta. A partir dos 7 anos, se dominar a leitura e se for esse o seu propósito, a criança pode ler as frases. Lembrar que esse caso, o teste avalia a <em>compreensão destas estruturas sintática na modalidade escrita</em> </div>
+        <div style="margin-bottom:6px">Se a criança dominar a leitura e se for esse o seu propósito, a criança pode ler as frases. Lembrar que nesse caso, o teste avalia a <em>compreensão destas estruturas sintáticas na modalidade escrita. Não temos dados normativos disponíveis nesta modalidade.</em> </div>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
           <input type="checkbox" id="fread" style="width:auto;height:auto;margin:0">
           O teste vai ser usado na modalidade escrita. A criança vai ler as frases (avaliação da compreensão leitora)
@@ -854,24 +882,29 @@ tr:last-child td { border-bottom:none; }
 </div>
 
 <!-- ══════ INSTRUCTIONS ══════ -->
-<div id="si" class="scr">
-  <div class="i-wrap">
-    <div class="i-card">
-      <div class="i-head"><h2 id="i-title">—</h2><p id="i-sub">—</p></div>
-      <div class="i-body">
-        <div class="i-script" id="i-script">—</div>
-        <ul class="i-notes" id="i-notes"></ul>
-      </div>
-      <div class="i-foot">
-        <button class="btn btn-ghost btn-sm" id="i-skip" style="display:none" onclick="skipEx()">Saltar exemplo</button>
-        <button class="btn btn-teal" onclick="beginTask()">▶ Começar</button>
-      </div>
+<div id="si" class="scr" style="background:#f0f4f8;overflow-y:auto">
+  <div style="max-width:500px;margin:0 auto;padding:32px 24px 48px">
+
+    <h2 id="i-title" style="color:#1a2e4a;font-size:1.05rem;font-weight:700;margin-bottom:2px">—</h2>
+    <p id="i-sub" style="color:#6b8faa;font-size:.78rem;margin-bottom:28px">—</p>
+
+    <div style="margin-bottom:24px">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2a8a8a;margin-bottom:10px">O que dizes à criança</div>
+      <div id="i-intro" style="color:#2a3a4a;font-size:.92rem;line-height:1.7"></div>
+    </div>
+
+    <div style="border-top:1px solid #d0dce8;padding-top:18px;margin-bottom:32px">
+      <ul id="i-notes" style="color:#6b7f96;font-size:.82rem;line-height:1.8;padding-left:16px"></ul>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-teal" onclick="beginTask()">▶ Começar</button>
     </div>
   </div>
 </div>
 
 <!-- ══════ 2A ══════ -->
-<div id="s2a" class="scr">
+<div id="s2a" class="scr" style="position:relative">
   <div class="t-bar">
     <div class="t-l"><span class="t-nm" id="2a-nm">—</span><span class="t-tk">2A · Passivas</span></div>
     <div class="t-r">
@@ -880,14 +913,16 @@ tr:last-child td { border-bottom:none; }
     </div>
   </div>
   <div class="sent-bar" id="2a-sent-bar">
-    <div class="sent-audio no-audio" id="2a-audio" title="Áudio não disponível">🔊</div>
+    <div class="read-mode-label"></div>
+    <div class="sent-audio no-audio" id="2a-audio" title="Reproduzir áudio">🔊</div>
     <div class="sent-text" id="2a-sent">—</div>
   </div>
+  <div id="2a-ex-panel" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(240,244,248,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;gap:0"></div>
   <div class="cards-area" id="2a-cards"></div>
 </div>
 
 <!-- ══════ 2B ══════ -->
-<div id="s2b" class="scr">
+<div id="s2b" class="scr" style="position:relative">
   <div class="t-bar">
     <div class="t-l"><span class="t-nm" id="2b-nm">—</span><span class="t-tk" id="2b-tk">2B · Relativas</span></div>
     <div class="t-r">
@@ -895,10 +930,12 @@ tr:last-child td { border-bottom:none; }
       <div class="tmr" id="2b-tm">00:00</div>
     </div>
   </div>
-  <div class="sent-bar">
-    <div class="sent-audio no-audio" id="2b-audio" title="Áudio não disponível">🔊</div>
+  <div class="sent-bar" id="2b-sent-bar">
+    <div class="read-mode-label"></div>
+    <div class="sent-audio no-audio" id="2b-audio" title="Reproduzir áudio">🔊</div>
     <div class="sent-text" id="2b-sent">—</div>
   </div>
+  <div id="2b-ex-panel" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(240,244,248,.97);flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;gap:0"></div>
   <div class="slide-area" id="2b-area">
     <img class="slide-img" id="2b-img" src="" alt="">
     <div class="hotspot-wrap" id="2b-hw"></div>
@@ -906,7 +943,7 @@ tr:last-child td { border-bottom:none; }
 </div>
 
 <!-- ══════ 2C ══════ -->
-<div id="s2c" class="scr">
+<div id="s2c" class="scr" style="position:relative">
   <div class="t-bar">
     <div class="t-l"><span class="t-nm" id="2c-nm">—</span><span class="t-tk">2C · Consciência</span></div>
     <div class="t-r">
@@ -914,10 +951,12 @@ tr:last-child td { border-bottom:none; }
       <div class="tmr" id="2c-tm">00:00</div>
     </div>
   </div>
-  <div class="sent-bar">
-    <div class="sent-audio no-audio" id="2c-audio" title="Áudio não disponível">🔊</div>
+  <div class="sent-bar" id="2c-sent-bar">
+    <div class="read-mode-label"></div>
+    <div class="sent-audio no-audio" id="2c-audio" title="Reproduzir áudio">🔊</div>
     <div class="sent-text" id="2c-sent">—</div>
   </div>
+  <div id="2c-ex-panel" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(240,244,248,.97);flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;gap:0"></div>
   <div class="c2c-wrap" id="2c-wrap">
     <div class="c2c-top" id="2c-top">
       <img class="c2c-grumpf" src="img/2C_Grunf.png" alt="Grumpf" id="2c-grumpf">
@@ -1178,6 +1217,48 @@ let S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},
 const key = (task, n) => task + '|' + n;
 
 /* ══════════════════════════════════════════════════════
+   AUDIO + READING MODE
+══════════════════════════════════════════════════════ */
+function applyReadMode() {
+  // Apply reading mode styling to all sent-bars
+  document.querySelectorAll('.sent-bar').forEach(bar => {
+    if (S.read) {
+      bar.classList.add('read-mode');
+      // Insert read-mode-label if not present
+      if (!bar.querySelector('.read-mode-label')) {
+        const lbl = document.createElement('div');
+        lbl.className = 'read-mode-label';
+        lbl.textContent = '📖 A criança lê';
+        bar.insertBefore(lbl, bar.firstChild);
+      }
+    } else {
+      bar.classList.remove('read-mode');
+    }
+  });
+}
+
+function playAudio(task, itemN) {
+  // Audio files expected at: audio/{task}_{n}.mp3
+  // e.g. audio/2a_1.mp3, audio/2b_Exemplo.mp3
+  const src = `audio/${task}_${itemN}.mp3`;
+  const audio = new Audio(src);
+  audio.onerror = () => {
+    // File not found — show subtle message
+    toast('🔔 Áudio ainda não disponível para este item');
+  };
+  audio.play().catch(() => {});
+}
+
+function setupAudioBtn(task, itemN, btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  // Check if file likely exists (optimistic — will fail gracefully on play)
+  btn.classList.remove('no-audio');
+  btn.onclick = () => playAudio(task, itemN);
+  btn.title = 'Reproduzir áudio';
+}
+
+/* ══════════════════════════════════════════════════════
    UTILS
 ══════════════════════════════════════════════════════ */
 function go(id) {
@@ -1303,22 +1384,44 @@ function startSession() {
 ══════════════════════════════════════════════════════ */
 const INSTRS = {
   '2a': {
-    t: 'Tarefa 2A — Compreensão de Passivas',
-    s: '15 itens · 3 imagens por item · escolher 1',
-    sc: '"Agora vais ouvir uma frase. Olha para as três imagens e aponta aquela que mostra o que acontece na frase."',
-    nl: ['Leia a frase em voz alta', 'A criança toca diretamente na imagem', 'Avança automaticamente após a escolha', 'O exemplo não é pontuado']
+    t: 'Grupo A — Compreensão de Frases Passivas',
+    s: '5 itens (1 exemplo + 4 de teste) · 3 imagens por item',
+    intro: [
+      'Vamos jogar um jogo.',
+      'Vais ouvir duas vezes uma frase.',
+      'Depois de ouvires a frase, aponta para a imagem certa.'
+    ],
+    exIntro: 'Vais ouvir duas vezes uma frase sobre um macaco, um gato e um rato. Depois de ouvires a frase, aponta para a imagem certa.',
+    exSent: 'O macaco encontrou o gato.',
+    exFeedback: 'Sabes qual é a imagem certa? É a primeira imagem. Agora que já percebeste como se joga, vamos continuar.',
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para a imagem diretamente no ecrã', 'O exemplo não é pontuado — avance manualmente']
   },
   '2b': {
-    t: 'Tarefa 2B — Relativas e Interrogativas',
-    s: '30 itens · 2 imagens · esquerda ou direita',
-    sc: '"Agora tens duas imagens. Ouve a frase com atenção e aponta para a imagem certa."',
-    nl: ['Leia a frase em voz alta', 'A criança toca na imagem da esquerda ou da direita', 'Avança automaticamente']
+    t: 'Grupo B — Compreensão de Relativas e Interrogativas',
+    s: '16 itens (1 exemplo + 15 de teste) · 2 quadrados por imagem',
+    intro: [
+      'Neste jogo, também vais ouvir frases.',
+      'Para cada frase há uma imagem com dois quadrados.',
+      'Tens de apontar para o quadrado certo.'
+    ],
+    exIntro: 'Ouve a frase e aponta para o quadrado certo.',
+    exSent: 'Escolhe o cavalo que está a comer erva.',
+    exFeedback: 'Escolheste o cavalo castanho? Muito bem. Então já sabes como se joga. Vamos continuar.',
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança toca na metade esquerda ou direita da imagem', 'O exemplo não é pontuado — avance manualmente']
   },
   '2c': {
-    t: 'Tarefa 2C — Consciência Sintática',
-    s: '12 itens · a frase está certa ou errada?',
-    sc: '"Vou ler-te frases. O Grumpf às vezes fala bem, outras vezes fala mal. Aponta a cara contente se a frase está bem, a cara triste se tem um erro."',
-    nl: ['Leia a frase em voz alta', 'A criança aponta para a cara contente 😊 ou triste 😟', 'Avança automaticamente']
+    t: 'Grupo C — Consciência Sintática',
+    s: '13 itens (1 exemplo + 12 de teste) · cara contente ou triste',
+    intro: [
+      'Neste jogo, vamos ajudar o Grumpf.',
+      'O Grumpf veio de outro planeta e não sabe falar bem a nossa língua.',
+      'Ouve bem o que o Grumpf diz. Ele vai dizer uma frase duas vezes.',
+      'Quando ele falar bem, aponta para a cara contente. Quando ele falar mal, aponta para a cara triste.'
+    ],
+    exIntro: 'Ouve o que o Grumpf diz e aponta para a cara contente ou para a cara triste.',
+    exSent: 'Eu é alto.',
+    exFeedback: 'Não está certo, pois não? O Grumpf devia dizer: Eu sou alto. Por isso apontamos para a cara triste. Vamos continuar.',
+    nl: ['Leia as frases em voz alta, duas vezes cada', 'A criança aponta para 😊 ou 😟', 'O exemplo não é pontuado — avance manualmente']
   }
 };
 
@@ -1326,14 +1429,12 @@ let _instrTask = null;
 function showInstr(task) {
   _instrTask = task;
   const d = INSTRS[task];
-  document.getElementById('i-title').textContent  = d.t;
-  document.getElementById('i-sub').textContent    = d.s;
-  document.getElementById('i-script').textContent = d.sc;
-  document.getElementById('i-notes').innerHTML    = d.nl.map(x => `<li>${x}</li>`).join('');
-  document.getElementById('i-skip').style.display = 'inline-flex';
+  document.getElementById('i-title').textContent   = d.t;
+  document.getElementById('i-sub').textContent     = d.s;
+  document.getElementById('i-intro').innerHTML     = d.intro.map(l => `<p style="margin-bottom:6px">"${l}"</p>`).join('');
+  document.getElementById('i-notes').innerHTML     = d.nl.map(x => `<li>${x}</li>`).join('');
   go('si');
 }
-function skipEx()    { S.cur = _instrTask; S.ci = 1; render(_instrTask); }
 function beginTask() { S.cur = _instrTask; S.ci = 0; render(_instrTask); }
 
 /* ══════════════════════════════════════════════════════
@@ -1345,10 +1446,58 @@ function render(task) { S.cur = task; S.blocked = false;
   else render2C();
 }
 
+function exPanelHTML(phase, task) {
+  const d = INSTRS[task];
+  if (phase === 'intro') {
+    return `
+      <div style="max-width:420px;width:100%">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2a8a8a;margin-bottom:14px">Exemplo</div>
+        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:20px">"${d.exIntro}"</p>
+        <div style="background:#fff;border-left:3px solid #3db8b8;border-radius:0 8px 8px 0;padding:12px 18px;margin-bottom:24px">
+          <div style="font-size:.65rem;color:#6b8faa;margin-bottom:4px">Frase</div>
+          <div style="color:#1a2e4a;font-size:1.05rem;font-weight:700">${d.exSent}</div>
+        </div>
+        <button class="btn btn-teal" onclick="hideExPanel('${task}')">Ver imagem →</button>
+      </div>`;
+  } else {
+    return `
+      <div style="max-width:420px;width:100%">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2a8a8a;margin-bottom:14px">Feedback do exemplo</div>
+        <p style="color:#2a3a4a;font-size:.95rem;line-height:1.7;margin-bottom:28px">"${d.exFeedback}"</p>
+        <button class="btn btn-teal" onclick="advanceFromEx('${task}')">Continuar →</button>
+      </div>`;
+  }
+}
+
+function showExPanel(task, phase) {
+  const el = document.getElementById(task.replace('2','s2').replace('s2','') + 'ex-panel');
+  const panelId = task === '2a' ? '2a-ex-panel' : task === '2b' ? '2b-ex-panel' : '2c-ex-panel';
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.innerHTML = exPanelHTML(phase, task);
+  panel.style.display = 'flex';
+  S.blocked = true;
+}
+
+function hideExPanel(task) {
+  const panelId = task === '2a' ? '2a-ex-panel' : task === '2b' ? '2b-ex-panel' : '2c-ex-panel';
+  const panel = document.getElementById(panelId);
+  if (panel) panel.style.display = 'none';
+  S.blocked = false;
+}
+
+function advanceFromEx(task) {
+  hideExPanel(task);
+  S.ci++;
+  render(task);
+}
+
 /* ── 2A ── */
 function render2A() {
   go('s2a');
+  applyReadMode();
   const item = I2A[S.ci];
+  if (item.bl) { showExPanel('2a', 'intro'); }
   document.getElementById('2a-nm').textContent = S.name;
   document.getElementById('2a-pf').style.width = (S.ci / I2A.length * 100) + '%';
   document.getElementById('2a-pc').textContent = (S.ci+1) + '/' + I2A.length;
@@ -1374,7 +1523,9 @@ function render2A() {
 /* ── 2B ── */
 function render2B() {
   go('s2b');
+  applyReadMode();
   const item = I2B[S.ci];
+  if (item.bl) { showExPanel('2b', 'intro'); }
   const isI  = !item.bl && item.type === 'Interrogativas';
   document.getElementById('2b-nm').textContent  = S.name;
   document.getElementById('2b-tk').textContent  = item.bl ? '2B · Exemplo' : isI ? '2B · Interrogativas' : '2B · Relativas';
@@ -1420,7 +1571,9 @@ window.addEventListener('resize', () => {
 /* ── 2C ── */
 function render2C() {
   go('s2c');
+  applyReadMode();
   const item = I2C[S.ci];
+  if (item.bl) { showExPanel('2c', 'intro'); }
   document.getElementById('2c-nm').textContent  = S.name;
   document.getElementById('2c-pf').style.width  = (S.ci / I2C.length * 100) + '%';
   document.getElementById('2c-pc').textContent  = (S.ci+1) + '/' + I2C.length;
@@ -1464,7 +1617,15 @@ function pick(task, val) {
     });
   }
 
-  setTimeout(() => advance(task), 950);
+  const items2 = task === '2a' ? I2A : task === '2b' ? I2B : I2C;
+  const isEx = items2[S.ci].bl;
+  setTimeout(() => {
+    if (isEx) {
+      showExPanel(task, 'feedback');
+    } else {
+      advance(task);
+    }
+  }, 950);
 }
 
 function advance(task) {
@@ -1487,11 +1648,15 @@ function advance(task) {
    FINISH & RESULTS
 ══════════════════════════════════════════════════════ */
 
-function qualLabel(pct) {
-  if (pct >= 85) return {t:'Dentro do esperado',    cls:'qual-ok'};
-  if (pct >= 67) return {t:'Próximo do esperado',   cls:'qual-near'};
-  if (pct >= 50) return {t:'Abaixo do esperado',    cls:'qual-low'};
-  return           {t:'Dificuldade significativa',  cls:'qual-low'};
+function qualLabel(pct, hasNorms=false) {
+  if (hasNorms) {
+    if (pct >= 85) return {t:'Dentro do esperado',   cls:'qual-ok'};
+    if (pct >= 67) return {t:'Próximo do esperado',  cls:'qual-near'};
+    if (pct >= 50) return {t:'Abaixo do esperado',   cls:'qual-low'};
+    return           {t:'Dificuldade significativa', cls:'qual-low'};
+  } else {
+    return {t: pct + '%', cls:'qual-na'};
+  }
 }
 
 function miniBar(score, max, color) {
@@ -1504,14 +1669,14 @@ function miniBar(score, max, color) {
   </div>`;
 }
 
-function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNote) {
+function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNote, hasNorms=false) {
   const pct = max > 0 ? Math.round(score/max*100) : 0;
-  const ql  = max > 0 ? qualLabel(pct) : {t:'Não administrado', cls:'qual-na'};
+  const ql  = max > 0 ? qualLabel(pct, hasNorms) : {t:'Não administrado', cls:'qual-na'};
   const subHtml = subRows.map(r =>
     `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <span style="font-size:.68rem;color:var(--muted)">${r.label}</span>
       <div style="flex:1;margin:0 10px">${miniBar(r.score, r.max, r.color||color)}</div>
-      <span class="rt-qual ${qualLabel(r.max>0?Math.round(r.score/r.max*100):0).cls}" style="font-size:.58rem;padding:1px 6px">${r.max>0?qualLabel(Math.round(r.score/r.max*100)).t:'—'}</span>
+      <span class="rt-qual ${qualLabel(r.max>0?Math.round(r.score/r.max*100):0, hasNorms).cls}" style="font-size:.58rem;padding:1px 6px">${r.max>0?qualLabel(Math.round(r.score/r.max*100), hasNorms).t:'—'}</span>
     </div>`
   ).join('');
   return `<div class="r-task">
@@ -1766,7 +1931,7 @@ function finish() {
       s2a, 15,
       [{label:'Ativas — canónicas',        score:s2aAtiva,   max:n2aAtiva,   color:'#70b8b8'},
        {label:'Passivas — não-canónicas',   score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'}],
-      note2A);
+      note2A, canC);
 
     // ── 2B: Relativas ──
     const pctRS   = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
@@ -1816,7 +1981,7 @@ function finish() {
       s2bRel, 15,
       [{label:'RS — sujeito (canónicas)',       score:s2bRS, max:n2bRS, color:'#b09de0'},
        {label:'RO — objeto (marcador clínico)',  score:s2bRO, max:n2bRO, color:'#5a3a9a'}],
-      noteRel);
+      noteRel, canC);
 
     // ── 2B: Interrogativas ──
     const pctIS   = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
@@ -1868,7 +2033,7 @@ function finish() {
       s2bInt, 15,
       [{label:'IS — sujeito (canónicas)',        score:s2bIS, max:n2bIS, color:'#f0a070'},
        {label:'IO — objeto (marcador clínico)',   score:s2bIO, max:n2bIO, color:'#c04010'}],
-      noteInt);
+      noteInt, canC);
   }
 
   if (tk!=='comp') {
@@ -1945,7 +2110,7 @@ function finish() {
       [{label:'Gramaticais — aceitar',          score:s2cGram, max:n2cGram, color:'#a8dfc0'},
        {label:'Agramaticais: concordância',      score:s2cConc, max:n2cConc, color:'#3aab6d'},
        {label:'Agramaticais: ordem de palavras', score:s2cOrd,  max:n2cOrd,  color:'#1a7a40'}],
-      note2C);
+      note2C, canC);
   }
 
   tasksEl.innerHTML = html;
