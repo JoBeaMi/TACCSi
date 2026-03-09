@@ -636,6 +636,7 @@ tr:last-child td { border-bottom:none; }
   @page { margin: 15mm 12mm; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -662,6 +663,14 @@ tr:last-child td { border-bottom:none; }
     <p>Instrumento de rastreio para avaliação da compreensão e consciência de estruturas sintáticas não-canónicas. Sem produção verbal.</p>
     <div class="w-cta">
       <button class="btn btn-main btn-lg" onclick="go('ss')">▶ Iniciar Avaliação</button>
+      <label class="btn btn-out btn-sm" style="cursor:pointer" title="Reabrir relatório a partir de um ficheiro JSON guardado">
+        📂 Reabrir relatório
+        <input type="file" accept=".json" style="display:none" onchange="handleReopenFile(this)">
+      </label>
+      <label id="xl-import-btn" class="btn btn-out btn-sm" style="cursor:pointer;display:none" title="Importar avaliação a partir do Excel de dados">
+        📊 Importar do Excel
+        <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelImport(this)">
+      </label>
       <button class="btn btn-out btn-sm" onclick="showAbout()">ℹ Sobre</button>
     </div>
   </div>
@@ -2455,6 +2464,20 @@ function doCSV() {
 /* ══════════════════════════════════════════════════════
    NEW SESSION + ABOUT
 ══════════════════════════════════════════════════════ */
+/* secret unlock */
+(function(){
+  let _buf = '';
+  document.addEventListener('keydown', e => {
+    _buf += e.key;
+    if (_buf.length > 20) _buf = _buf.slice(-20);
+    if (_buf.endsWith('superadministradora')) {
+      const btn = document.getElementById('xl-import-btn');
+      if (btn) { btn.style.display = 'inline-flex'; toast('🔓 Modo de importação activado'); }
+      _buf = '';
+    }
+  });
+})();
+
 function newSession() {
   stopTimer();
   S = { name:'',dob:'',sex:'',sch:'',ex:'',dt:'',nt:'',tk:'all',diag:{},am:0,resp:{},t0:null,ti:null,el:0,cur:null,ci:0,blocked:false,uid:'',t1:null };
@@ -2549,6 +2572,10 @@ function saveJSON(scores) {
     tk:     S.tk,
     diag:   S.diag,
     lnm:    S.lnm,
+    read:   S.read,
+    el:     S.el,
+    nt:     S.nt,
+    resp:   S.resp,
     ...scores
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -2770,5 +2797,19 @@ function sendComparison(t2, t1, canC2, ng2) {
 /* Init */
 document.getElementById('fdt').value = new Date().toISOString().slice(0,10);
 </script>
+<!-- ══════ EXCEL PICKER MODAL ══════ -->
+<div id="xl-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,35,.7);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;max-width:500px;width:92%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="padding:20px 24px 16px;border-bottom:1px solid #e0e8f0;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:1rem;font-weight:700;color:#1a2e4a">Importar do Excel</div>
+        <div id="xl-sub" style="font-size:.78rem;color:#6b8faa;margin-top:2px"></div>
+      </div>
+      <button onclick="document.getElementById('xl-modal').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b8faa">✕</button>
+    </div>
+    <div id="xl-list" style="overflow-y:auto;padding:12px 16px;flex:1"></div>
+  </div>
+</div>
+
 </body>
 </html>
