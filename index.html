@@ -925,6 +925,7 @@ tr:last-child td { border-bottom:none; }
     <div class="t-r">
       <div class="prog"><div class="prog-b"><div class="prog-f" id="2a-pf" style="width:0%"></div></div><div class="prog-t" id="2a-pc">1/16</div></div>
       <div class="tmr" id="2a-tm">00:00</div>
+      <button onclick="pauseSession()" title="Guardar e sair" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:5px;padding:3px 9px;font-size:.75rem;cursor:pointer;font-weight:600">⏸ Pausar</button>
     </div>
   </div>
   <div class="sent-bar" id="2a-sent-bar">
@@ -943,6 +944,7 @@ tr:last-child td { border-bottom:none; }
     <div class="t-r">
       <div class="prog"><div class="prog-b"><div class="prog-f" id="2b-pf" style="width:0%"></div></div><div class="prog-t" id="2b-pc">1/31</div></div>
       <div class="tmr" id="2b-tm">00:00</div>
+      <button onclick="pauseSession()" title="Guardar e sair" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:5px;padding:3px 9px;font-size:.75rem;cursor:pointer;font-weight:600">⏸ Pausar</button>
     </div>
   </div>
   <div class="sent-bar" id="2b-sent-bar">
@@ -965,6 +967,7 @@ tr:last-child td { border-bottom:none; }
     <div class="t-r">
       <div class="prog"><div class="prog-b"><div class="prog-f" id="2c-pf" style="width:0%"></div></div><div class="prog-t" id="2c-pc">1/13</div></div>
       <div class="tmr" id="2c-tm">00:00</div>
+      <button onclick="pauseSession()" title="Guardar e sair" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:5px;padding:3px 9px;font-size:.75rem;cursor:pointer;font-weight:600">⏸ Pausar</button>
     </div>
   </div>
   <div class="sent-bar" id="2c-sent-bar">
@@ -1343,6 +1346,29 @@ function startTimer() {
 function stopTimer() { if (S.ti) { clearInterval(S.ti); S.ti = null; } }
 
 /* ══════════════════════════════════════════════════════
+   PAUSE / RESUME
+══════════════════════════════════════════════════════ */
+function pauseSession() {
+  stopTimer();
+  S.el += S.t0 ? Math.round((Date.now() - S.t0) / 1000) : 0;
+  S.t0 = null;
+  const data = {
+    _paused: true,
+    uid: S.uid, name: S.name, dob: S.dob, sex: S.sex, sch: S.sch,
+    am: S.am, dt: S.dt, tk: S.tk, diag: S.diag,
+    lnm: S.lnm, read: S.read, el: S.el, nt: S.nt,
+    cur: S.cur, ci: S.ci, resp: S.resp
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TACCSi_PAUSA_' + S.uid + '_' + S.dt + '.json';
+  a.click();
+  toast('⏸ Sessão guardada — pode retomar mais tarde');
+  setTimeout(() => go('sw'), 1200);
+}
+
+/* ══════════════════════════════════════════════════════
    SESSION START
 ══════════════════════════════════════════════════════ */
 function onDiagChange() {
@@ -1501,7 +1527,7 @@ function beginTask() { S.cur = _instrTask; S.ci = 0; render(_instrTask); }
 /* ══════════════════════════════════════════════════════
    RENDER
 ══════════════════════════════════════════════════════ */
-function render(task) { S.cur = task; S.blocked = false;
+function render(task) { S.cur = task; S.blocked = false; S.it0 = Date.now();
   if (task === '2a') render2A();
   else if (task === '2b') render2B();
   else render2C();
@@ -1664,7 +1690,7 @@ function pick(task, val) {
   if (S.blocked) return;
   const items = task === '2a' ? I2A : task === '2b' ? I2B : I2C;
   const item  = items[S.ci];
-  S.resp[key(task, item.n)] = { resp: val, correct: val == item.c, sk: 0 };
+  S.resp[key(task, item.n)] = { resp: val, correct: val == item.c, sk: 0, rt: S.it0 ? Date.now() - S.it0 : null };
   S.blocked = true;
 
   // Highlight selection (neutral teal — no correct/wrong shown to child)
@@ -1768,7 +1794,33 @@ function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNo
 function finish() {
   stopTimer();
   S.blocked = false;
-  go('sr'); // always show results screen immediately — even if render fails below
+
+  // Check at least one domain is complete before proceeding
+  const respKeys = Object.keys(S.resp);
+  const n2aAnswered = I2A.filter(i=>!i.bl).filter(i=>respKeys.includes('2a|'+i.n)).length;
+  const n2bAnswered = I2B.filter(i=>!i.bl).filter(i=>respKeys.includes('2b|'+i.n)).length;
+  const n2cAnswered = I2C.filter(i=>!i.bl).filter(i=>respKeys.includes('2c|'+i.n)).length;
+  const compDone  = n2aAnswered === I2A.filter(i=>!i.bl).length && n2bAnswered === I2B.filter(i=>!i.bl).length;
+  const awareDone = n2cAnswered === I2C.filter(i=>!i.bl).length;
+  const tkComp  = S.tk === 'comp'  || S.tk === 'all';
+  const tkAware = S.tk === 'aware' || S.tk === 'all';
+
+  if ((tkComp && !compDone) && (tkAware && !awareDone)) {
+    // Neither domain complete — offer to pause instead
+    if (!confirm('A avaliação ainda não está completa — nenhum domínio foi terminado.\n\nClica em OK para guardar o progresso e sair, ou Cancelar para continuar.')) {
+      startTimer(); return;
+    }
+    pauseSession(); return;
+  }
+  if (S.tk === 'all' && !compDone && awareDone) {
+    // Only awareness done — warn but allow
+    toast('⚠ Relatório gerado apenas com o domínio de Consciência Sintática');
+  }
+  if (S.tk === 'all' && compDone && !awareDone) {
+    toast('⚠ Relatório gerado apenas com o domínio de Compreensão');
+  }
+
+  go('sr');
   try {
   const dur = (S.el / 60).toFixed(1);
   const tk  = S.tk;
@@ -2623,7 +2675,7 @@ function handleReopenFile(input) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.resp) { toast('⚠ Ficheiro sem dados de resposta — guarde uma nova avaliação para ter esta funcionalidade'); return; }
+      if (!data.resp) { toast('⚠ Ficheiro sem dados de resposta'); return; }
       S.uid  = data.uid  || '';
       S.name = data.name || '';
       S.dob  = data.dob  || '';
@@ -2640,7 +2692,17 @@ function handleReopenFile(input) {
       S.resp = data.resp || {};
       S.t1   = null;
       S.blocked = false;
-      finish();
+      if (data._paused && data.cur) {
+        // Resume mid-session
+        S.cur = data.cur;
+        S.ci  = data.ci  || 0;
+        S.t0  = Date.now();
+        startTimer();
+        render(S.cur);
+        toast('▶ Sessão retomada — ' + S.name);
+      } else {
+        finish();
+      }
     } catch(err) { toast('⚠ Ficheiro inválido ou corrompido'); }
   };
   reader.readAsText(file);
