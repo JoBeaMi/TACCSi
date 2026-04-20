@@ -1811,7 +1811,7 @@ function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNo
    explaining theoretical constructs with concrete examples.
 ══════════════════════════════════════════════════════ */
 function buildSynthesis(M) {
-  const { tk, ageStr, canC, ng, csc: cscVal, risk, younger, older } = M;
+  const { tk, ageStr, canC, ng, csc: cscVal, risk, younger, older, name, sex } = M;
   const { pAtiva, pPassiva, pRS, pRO, pIS, pIO, pGram, pConc, pOrd } = M;
   const { actLow, passLow, rsLow, roLow, isLow, ioLow, gramLow, concLow, ordLow } = M;
 
@@ -1820,8 +1820,16 @@ function buildSynthesis(M) {
                   : tk === 'comp' ? 'domínio de Compreensão do TACCSi (tarefas 2A e 2B)'
                   :                 'domínio de Consciência Sintática do TACCSi (tarefa 2C)';
 
+  // Personalization — use first name if available
+  const firstName = (name || '').trim().split(/\s+/)[0] || '';
+  const art = sex === 'F' ? 'à' : 'ao';
+  const pron = sex === 'F' ? 'ela' : 'ele';
+  const def = sex === 'F' ? 'a' : 'o';
+  const childRef = firstName ? `${art} ${firstName}` : 'a uma criança';
+  const childDef = firstName ? `${def === 'a' ? 'A' : 'O'} ${firstName}` : 'A criança';
+
   // ── Opening with global verdict ──
-  let opening = `O ${protoName} foi administrado a uma criança de ${ageStr} anos`;
+  let opening = `O ${protoName} foi administrado ${childRef}, de ${ageStr} anos`;
   if (canC) {
     const verdict = cscVal < 70
       ? `, com um perfil <strong>marcadamente abaixo dos limites normativos</strong> (CSC = ${cscVal}; M = 100, DP = 15; limiar clínico CSC &lt; 85; faixa típica 85–115 para ${normLabel}).`
@@ -1841,42 +1849,54 @@ function buildSynthesis(M) {
     opening += '. ';
   }
 
-  // ── Body: asymmetries, structures, convergence ──
+  // ── Body: teach constructs once, then per-task observations ──
   let body = '';
 
   if (tk !== 'aware') {
-    const asym2A = (pAtiva !== null && pPassiva !== null) ? (pAtiva - pPassiva) : null;
-    const asymRel = (pRS !== null && pRO !== null) ? (pRS - pRO) : null;
-    const asymInt = (pIS !== null && pIO !== null) ? (pIS - pIO) : null;
-    const hasClassicAsym = (asym2A !== null && asym2A >= 25) ||
-                           (asymRel !== null && asymRel >= 25) ||
-                           (asymInt !== null && asymInt >= 25);
-    const allCompOK = !actLow && !passLow && !rsLow && !roLow && !isLow && !ioLow;
+    // Teach the canonical/non-canonical distinction with examples
+    body += `O TACCSi compara, nas tarefas de compreensão, o desempenho em <strong>estruturas canónicas</strong> — frases em que o participante que realiza a acção (agente) aparece antes do participante que a sofre (tema), como em <em>"a mãe penteou a filha"</em> — com o desempenho em <strong>estruturas não-canónicas</strong>, em que essa ordem é invertida: passivas longas (<em>"a filha foi penteada pela mãe"</em>), relativas de objecto (<em>"mostra-me a menina que a mãe pintou"</em>) e interrogativas-Qu de objecto (<em>"que menina é que a mãe abraçou?"</em>). As estruturas não-canónicas são adquiridas mais tarde e particularmente sensíveis a dificuldades de linguagem. `;
 
-    // Teach the canonical/non-canonical distinction — THE key construct
-    body += `Nas tarefas de compreensão, o TACCSi avalia a distinção entre <strong>estruturas canónicas</strong> — frases em que o participante que realiza a acção (agente) aparece antes do participante que a sofre (tema), como em <em>"a mãe penteou a filha"</em> — e <strong>estruturas não-canónicas</strong>, em que essa ordem é invertida: passivas longas (<em>"a filha foi penteada pela mãe"</em>), relativas de objecto (<em>"mostra-me a menina que a mãe pintou"</em>) e interrogativas-Qu de objecto (<em>"que menina é que a mãe abraçou?"</em>). As estruturas não-canónicas são adquiridas mais tarde e particularmente sensíveis a dificuldades de linguagem. `;
-
-    // Report the observed pattern
-    const canonPcts = [], nonCanonPcts = [];
-    if (pAtiva !== null)   canonPcts.push(`ativas ${pAtiva}%`);
-    if (pRS !== null)      canonPcts.push(`relativas de sujeito ${pRS}%`);
-    if (pIS !== null)      canonPcts.push(`interrogativas-Qu de sujeito ${pIS}%`);
-    if (pPassiva !== null) nonCanonPcts.push(`passivas longas ${pPassiva}%`);
-    if (pRO !== null)      nonCanonPcts.push(`relativas de objecto ${pRO}%`);
-    if (pIO !== null)      nonCanonPcts.push(`interrogativas-Qu de objecto ${pIO}%`);
-
-    if (allCompOK) {
-      body += `Nesta criança, o desempenho é paralelo entre os dois tipos de estruturas — canónicas: ${canonPcts.join('; ')}; não-canónicas: ${nonCanonPcts.join('; ')} — sem assimetrias clinicamente relevantes. `;
-    } else if (hasClassicAsym) {
-      body += `Nesta criança observa-se a assimetria clínica clássica: desempenho preservado nas canónicas (${canonPcts.join('; ')}) e desempenho reduzido nas não-canónicas (${nonCanonPcts.join('; ')}). `;
-    } else {
-      body += `Os valores observados são: canónicas (${canonPcts.join('; ')}); não-canónicas (${nonCanonPcts.join('; ')}). O perfil mostra dificuldades dispersas, sem uma assimetria canónica-vs-não-canónica clara. `;
+    // Per-task honest observations (no global generalization)
+    const obs = [];
+    if (pAtiva !== null && pPassiva !== null) {
+      if (!actLow && !passLow)
+        obs.push(`nas <strong>passivas</strong>, desempenho adequado em ambos os tipos (ativas ${pAtiva}%, passivas longas ${pPassiva}%)`);
+      else if (passLow && !actLow)
+        obs.push(`nas <strong>passivas</strong>, <strong>assimetria clássica</strong> — desempenho preservado nas ativas (${pAtiva}%) e reduzido nas passivas longas (${pPassiva}%)`);
+      else if (!passLow && actLow)
+        obs.push(`nas <strong>passivas</strong>, <strong>padrão atípico</strong> — passivas longas (${pPassiva}%) superiores às ativas (${pAtiva}%), inesperado dado que as ativas são estruturalmente simples e raramente problemáticas`);
+      else
+        obs.push(`nas <strong>passivas</strong>, <strong>desempenho reduzido em ambos os tipos</strong> (ativas ${pAtiva}%, passivas longas ${pPassiva}%), incluindo dificuldades nas ativas, que são de aquisição precoce`);
+    }
+    if (pRS !== null && pRO !== null) {
+      if (!rsLow && !roLow)
+        obs.push(`nas <strong>relativas</strong>, desempenho adequado em ambos os tipos (RS ${pRS}%, RO ${pRO}%)`);
+      else if (roLow && !rsLow)
+        obs.push(`nas <strong>relativas</strong>, <strong>assimetria clássica sujeito-objeto</strong> — RS ${pRS}% face a RO ${pRO}%`);
+      else if (!roLow && rsLow)
+        obs.push(`nas <strong>relativas</strong>, <strong>padrão atípico</strong> — RS ${pRS}% abaixo do esperado apesar de RO em ${pRO}%`);
+      else
+        obs.push(`nas <strong>relativas</strong>, <strong>desempenho reduzido em ambos os tipos</strong> (RS ${pRS}%, RO ${pRO}%), incluindo dificuldades nas RS, que são de aquisição precoce`);
+    }
+    if (pIS !== null && pIO !== null) {
+      if (!isLow && !ioLow)
+        obs.push(`nas <strong>interrogativas-Qu</strong>, desempenho adequado em ambos os tipos (IS ${pIS}%, IO ${pIO}%)`);
+      else if (ioLow && !isLow)
+        obs.push(`nas <strong>interrogativas-Qu</strong>, <strong>assimetria clássica sujeito-objeto</strong> — IS ${pIS}% face a IO ${pIO}%`);
+      else if (!ioLow && isLow)
+        obs.push(`nas <strong>interrogativas-Qu</strong>, <strong>padrão atípico</strong> — IS ${pIS}% abaixo do esperado apesar de IO em ${pIO}%`);
+      else
+        obs.push(`nas <strong>interrogativas-Qu</strong>, <strong>desempenho reduzido em ambos os tipos</strong> (IS ${pIS}%, IO ${pIO}%), incluindo dificuldades nas IS, que são de aquisição precoce`);
     }
 
-    // Cross-task convergence: RO + IO
+    if (obs.length) {
+      body += `No perfil ${firstName ? `d${def} ${firstName}` : 'observado'} regista-se: ${obs.join('; ')}. `;
+    }
+
+    // Cross-task convergence: RO + IO (this is robust regardless of mixed patterns above)
     if (roLow && ioLow) {
       body += `<strong>⚠ Convergência clínica:</strong> o desempenho está abaixo do esperado tanto nas relativas de objecto como nas interrogativas-Qu de objecto. Estas duas estruturas partilham a mesma <strong>configuração de intervenção</strong> — um elemento (o objecto) é deslocado para o início da frase, e o sujeito interpõe-se entre esse elemento e a sua posição original, como em <em>"mostra-me a menina [que] <u>a mãe</u> pintou ___"</em>, onde a palavra "<u>a mãe</u>" se interpõe entre "a menina" e o verbo "pintou" do qual é complemento. Esta convergência constitui um sinal clínico robusto de Perturbação do Desenvolvimento da Linguagem em Português Europeu (Costa, Lobo &amp; Silva, 2011; Martins, 2022). `;
-    } else if (passLow && !actLow) {
+    } else if (passLow && !actLow && !roLow && !ioLow) {
       body += `As dificuldades estão concentradas nas <strong>passivas longas</strong>, estrutura cuja compreensão plena se prolonga até aos 8 anos e que é particularmente vulnerável em populações clínicas (Estrela, 2014; Agostinho, 2020; Costa, 2024; Montgomery &amp; Evans, 2009). `;
     }
   }
@@ -1902,7 +1922,7 @@ function buildSynthesis(M) {
   if (canC && !risk) {
     closing = `<strong>Com base neste instrumento, não há indicadores de perturbação sintáctica.</strong>`;
   } else if (canC && cscVal >= 70) {
-    closing = `<strong>Recomenda-se avaliação de linguagem complementar</strong> para integrar este perfil com outras medidas clínicas e monitorizar a evolução.`;
+    closing = `<strong>Recomenda-se avaliação de linguagem complementar</strong> para integrar este perfil com outras medidas clínicas e monitorizar a evolução${firstName ? ` ${def === 'a' ? 'da' : 'do'} ${firstName}` : ''}.`;
   } else if (canC && cscVal < 70) {
     closing = `<strong>Recomenda-se avaliação de linguagem abrangente com prioridade.</strong> As dificuldades observadas em estruturas sintácticas não-canónicas têm impacto directo na compreensão leitora e no sucesso escolar.`;
   } else {
@@ -1911,9 +1931,8 @@ function buildSynthesis(M) {
     if (anyLow && older) {
       closing = `Ainda que os valores normativos do TACCSi não se apliquem a esta idade, a literatura em PE documenta que crianças com desenvolvimento típico de 8–11 anos atingem ~95% em relativas e interrogativas-Qu de objecto (Martins, 2022). O perfil observado sugere áreas de fragilidade que merecem <strong>avaliação de linguagem complementar</strong>.`;
     } else if (anyLow && younger) {
-      closing = `Ainda que a aquisição destas estruturas ainda esteja em curso nesta idade, o perfil observado justifica <strong>monitorização</strong> e integração com outras medidas de linguagem, especialmente se acompanhado de outros sinais clínicos.`;
+      closing = `Ainda que a aquisição destas estruturas esteja em curso nesta idade, o perfil observado justifica <strong>monitorização</strong> e integração com outras medidas de linguagem, especialmente se acompanhado de outros sinais clínicos.`;
     } else if (anyLow) {
-      // in-range age but partial protocol (tk !== 'all')
       closing = `O perfil observado mostra áreas de fragilidade que merecem <strong>integração com outras medidas clínicas</strong>. Para uma leitura normativa completa, recomenda-se administração do protocolo completo do TACCSi.`;
     } else {
       closing = `O perfil observado é compatível com uma trajectória desenvolvimental típica para a idade.`;
@@ -2161,6 +2180,7 @@ function finish() {
 
   const M = {
     tk, am: S.am, ageStr, canC, ng, csc: cscVal, risk, younger, older, diag: S.diag,
+    name: S.name, sex: S.sex,
     pAtiva, pPassiva, pRS, pRO, pIS, pIO, pGram, pConc, pOrd,
     zAtiva, zPassiva, zRS, zRO, zIS, zIO, zGram, zConc, zOrd,
     actLow, passLow, rsLow, roLow, isLow, ioLow, gramLow, concLow, ordLow,
