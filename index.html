@@ -591,13 +591,19 @@ tr:last-child td { border-bottom:none; }
             padding: 12px 20px !important; }
 
   /* Child card */
-  .r-child-card { break-inside: avoid; }
+  .r-child { break-inside: avoid; }
 
   /* Verdict card */
   .r-verdict { break-inside: avoid;
                border: 1.5px solid #ccc !important;
                -webkit-print-color-adjust: exact;
                print-color-adjust: exact; }
+
+  /* Synthesis block */
+  .r-synth { break-inside: avoid;
+             border: 1px solid #ddd !important;
+             -webkit-print-color-adjust: exact;
+             print-color-adjust: exact; }
 
   /* Chart — scale to page width */
   .r-chart-wrap {
@@ -607,12 +613,17 @@ tr:last-child td { border-bottom:none; }
   #r-chart svg { width: 100% !important; height: auto !important; }
 
   /* Task cards — each on its own page break if needed */
-  .task-card { break-inside: avoid;
-               border: 1px solid #ddd !important;
-               margin-bottom: 10px !important; }
+  .r-task { break-inside: avoid;
+            border: 1px solid #ddd !important;
+            margin-bottom: 10px !important; }
+
+  /* Clinical note inside task cards — keep with its card */
+  .rt-note { break-inside: avoid;
+             -webkit-print-color-adjust: exact;
+             print-color-adjust: exact; }
 
   /* Sub-row bars — keep colours */
-  .sub-bar-fill {
+  .rt-bar-fill {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -1026,6 +1037,9 @@ tr:last-child td { border-bottom:none; }
 
     <!-- Out-of-range notice -->
     <div class="r-oor" id="r-oor" style="display:none">—</div>
+
+    <!-- Synthesis paragraph — always appears -->
+    <div class="r-synth" id="r-synth" style="background:#fff;border:1px solid #d0dce8;border-radius:12px;padding:18px 22px;margin-bottom:16px;line-height:1.7;font-size:.88rem;color:#2a3a4a">—</div>
 
     <!-- CSC gauge (only when norms apply) -->
     <div class="r-gauge-wrap" id="r-gauge" style="display:none">
@@ -1447,7 +1461,7 @@ function startSession() {
 const INSTRS = {
   '2a': {
     t: 'Grupo A — Compreensão de Frases Passivas',
-    s: '5 itens (1 exemplo + 4 de teste) · 3 imagens por item',
+    s: '16 itens (1 exemplo + 15 de teste) · 3 imagens por item',
     intro: [
       'Vamos jogar um jogo.',
       'Vais ouvir duas vezes uma frase.',
@@ -1467,7 +1481,7 @@ const INSTRS = {
   },
   '2b': {
     t: 'Grupo B — Compreensão de Relativas e Interrogativas',
-    s: '16 itens (1 exemplo + 15 de teste) · 2 quadrados por imagem',
+    s: '31 itens (1 exemplo + 30 de teste: 15 relativas + 15 interrogativas) · 2 quadrados por imagem',
     intro: [
       'Neste jogo, também vais ouvir frases.',
       'Para cada frase há uma imagem com dois quadrados.',
@@ -1791,6 +1805,124 @@ function taskCard(badge, color, name, shortDesc, score, max, subRows, clinicalNo
   </div>`;
 }
 
+/* ══════════════════════════════════════════════════════
+   CLINICAL SYNTHESIS — always appears at top of report
+   Integrates the three tasks into a coherent clinical narrative,
+   explaining theoretical constructs with concrete examples.
+══════════════════════════════════════════════════════ */
+function buildSynthesis(M) {
+  const { tk, ageStr, canC, ng, csc: cscVal, risk, younger, older } = M;
+  const { pAtiva, pPassiva, pRS, pRO, pIS, pIO, pGram, pConc, pOrd } = M;
+  const { actLow, passLow, rsLow, roLow, isLow, ioLow, gramLow, concLow, ordLow } = M;
+
+  const normLabel = canC ? NORMS[ng].label : null;
+  const protoName = tk === 'all'  ? 'protocolo completo do TACCSi'
+                  : tk === 'comp' ? 'domínio de Compreensão do TACCSi (tarefas 2A e 2B)'
+                  :                 'domínio de Consciência Sintática do TACCSi (tarefa 2C)';
+
+  // ── Opening with global verdict ──
+  let opening = `O ${protoName} foi administrado a uma criança de ${ageStr} anos`;
+  if (canC) {
+    const verdict = cscVal < 70
+      ? `, com um perfil <strong>marcadamente abaixo dos limites normativos</strong> (CSC = ${cscVal}; M = 100, DP = 15; limiar clínico CSC &lt; 85; faixa típica 85–115 para ${normLabel}).`
+      : cscVal < 85
+      ? `, com um perfil <strong>abaixo do limiar clínico</strong> (CSC = ${cscVal}; M = 100, DP = 15; limiar &lt; 85; faixa típica 85–115 para ${normLabel}).`
+      : cscVal >= 115
+      ? `, com um perfil <strong>acima dos limites normativos</strong> (CSC = ${cscVal}; M = 100, DP = 15; faixa típica 85–115 para ${normLabel}).`
+      : `, com um perfil <strong>dentro dos limites normativos</strong> para a faixa etária (CSC = ${cscVal}; M = 100, DP = 15; faixa típica 85–115 para ${normLabel}).`;
+    opening += verdict + ' ';
+  } else if (younger) {
+    opening += `, <strong>abaixo da faixa normativa do instrumento</strong> (5;4–6;10 anos). O Score Composto Padronizado (CSC) não foi calculado — a amostra normativa do TACCSi não inclui esta faixa etária — e os resultados devem ser lidos em modo descritivo, não comparativo. `;
+  } else if (older) {
+    opening += `, <strong>acima da faixa normativa do instrumento</strong> (5;4–6;10 anos). O CSC não foi calculado; os resultados são apresentados para interpretação descritiva. `;
+  } else if (tk !== 'all') {
+    opening += ` com protocolo parcial. O CSC não foi calculado — o cálculo requer a administração das três tarefas — e os resultados são apresentados para interpretação descritiva. `;
+  } else {
+    opening += '. ';
+  }
+
+  // ── Body: asymmetries, structures, convergence ──
+  let body = '';
+
+  if (tk !== 'aware') {
+    const asym2A = (pAtiva !== null && pPassiva !== null) ? (pAtiva - pPassiva) : null;
+    const asymRel = (pRS !== null && pRO !== null) ? (pRS - pRO) : null;
+    const asymInt = (pIS !== null && pIO !== null) ? (pIS - pIO) : null;
+    const hasClassicAsym = (asym2A !== null && asym2A >= 25) ||
+                           (asymRel !== null && asymRel >= 25) ||
+                           (asymInt !== null && asymInt >= 25);
+    const allCompOK = !actLow && !passLow && !rsLow && !roLow && !isLow && !ioLow;
+
+    // Teach the canonical/non-canonical distinction — THE key construct
+    body += `Nas tarefas de compreensão, o TACCSi avalia a distinção entre <strong>estruturas canónicas</strong> — frases em que o participante que realiza a acção (agente) aparece antes do participante que a sofre (tema), como em <em>"a mãe penteou a filha"</em> — e <strong>estruturas não-canónicas</strong>, em que essa ordem é invertida: passivas longas (<em>"a filha foi penteada pela mãe"</em>), relativas de objecto (<em>"mostra-me a menina que a mãe pintou"</em>) e interrogativas-Qu de objecto (<em>"que menina é que a mãe abraçou?"</em>). As estruturas não-canónicas são adquiridas mais tarde e particularmente sensíveis a dificuldades de linguagem. `;
+
+    // Report the observed pattern
+    const canonPcts = [], nonCanonPcts = [];
+    if (pAtiva !== null)   canonPcts.push(`ativas ${pAtiva}%`);
+    if (pRS !== null)      canonPcts.push(`relativas de sujeito ${pRS}%`);
+    if (pIS !== null)      canonPcts.push(`interrogativas-Qu de sujeito ${pIS}%`);
+    if (pPassiva !== null) nonCanonPcts.push(`passivas longas ${pPassiva}%`);
+    if (pRO !== null)      nonCanonPcts.push(`relativas de objecto ${pRO}%`);
+    if (pIO !== null)      nonCanonPcts.push(`interrogativas-Qu de objecto ${pIO}%`);
+
+    if (allCompOK) {
+      body += `Nesta criança, o desempenho é paralelo entre os dois tipos de estruturas — canónicas: ${canonPcts.join('; ')}; não-canónicas: ${nonCanonPcts.join('; ')} — sem assimetrias clinicamente relevantes. `;
+    } else if (hasClassicAsym) {
+      body += `Nesta criança observa-se a assimetria clínica clássica: desempenho preservado nas canónicas (${canonPcts.join('; ')}) e desempenho reduzido nas não-canónicas (${nonCanonPcts.join('; ')}). `;
+    } else {
+      body += `Os valores observados são: canónicas (${canonPcts.join('; ')}); não-canónicas (${nonCanonPcts.join('; ')}). O perfil mostra dificuldades dispersas, sem uma assimetria canónica-vs-não-canónica clara. `;
+    }
+
+    // Cross-task convergence: RO + IO
+    if (roLow && ioLow) {
+      body += `<strong>⚠ Convergência clínica:</strong> o desempenho está abaixo do esperado tanto nas relativas de objecto como nas interrogativas-Qu de objecto. Estas duas estruturas partilham a mesma <strong>configuração de intervenção</strong> — um elemento (o objecto) é deslocado para o início da frase, e o sujeito interpõe-se entre esse elemento e a sua posição original, como em <em>"mostra-me a menina [que] <u>a mãe</u> pintou ___"</em>, onde a palavra "<u>a mãe</u>" se interpõe entre "a menina" e o verbo "pintou" do qual é complemento. Esta convergência constitui um sinal clínico robusto de Perturbação do Desenvolvimento da Linguagem em Português Europeu (Costa, Lobo &amp; Silva, 2011; Martins, 2022). `;
+    } else if (passLow && !actLow) {
+      body += `As dificuldades estão concentradas nas <strong>passivas longas</strong>, estrutura cuja compreensão plena se prolonga até aos 8 anos e que é particularmente vulnerável em populações clínicas (Estrela, 2014; Agostinho, 2020; Costa, 2024; Montgomery &amp; Evans, 2009). `;
+    }
+  }
+
+  // 2C — Syntactic awareness
+  if (tk !== 'comp') {
+    const aw = [];
+    if (pGram !== null) aw.push(`frases correctas aceites em ${pGram}%`);
+    if (pConc !== null) aw.push(`erros de concordância detectados em ${pConc}%`);
+    if (pOrd !== null)  aw.push(`erros de ordem de palavras detectados em ${pOrd}%`);
+    const anyAwareLow = concLow || ordLow || gramLow;
+
+    body += `Na tarefa de <strong>consciência sintáctica</strong> — em que a criança apenas indica se uma frase "soa bem" ou "soa mal", sem precisar de explicar porquê, um nível metalinguístico adequado à idade pré-escolar (Simard, Labelle &amp; Bergeron, 2017) — observa-se ${aw.join('; ')}. `;
+    if (anyAwareLow) {
+      body += `Recorde-se que, em Português Europeu, a sensibilidade a violações de concordância (<em>"elas é muito altas"</em>) emerge antes da sensibilidade a violações de ordem de palavras (<em>"casa esta é muito grande"</em>), cuja aquisição se prolonga pelos primeiros anos de escolaridade (Loureiro, 2008; Perdigão, 2015). `;
+    } else {
+      body += `O perfil é compatível com sensibilidade metalinguística dentro do esperado para a idade. `;
+    }
+  }
+
+  // ── Closing: clinical recommendation ──
+  let closing = '';
+  if (canC && !risk) {
+    closing = `<strong>Com base neste instrumento, não há indicadores de perturbação sintáctica.</strong>`;
+  } else if (canC && cscVal >= 70) {
+    closing = `<strong>Recomenda-se avaliação de linguagem complementar</strong> para integrar este perfil com outras medidas clínicas e monitorizar a evolução.`;
+  } else if (canC && cscVal < 70) {
+    closing = `<strong>Recomenda-se avaliação de linguagem abrangente com prioridade.</strong> As dificuldades observadas em estruturas sintácticas não-canónicas têm impacto directo na compreensão leitora e no sucesso escolar.`;
+  } else {
+    // CSC not applicable — descriptive only
+    const anyLow = roLow || ioLow || passLow || concLow || ordLow || rsLow || isLow || gramLow;
+    if (anyLow && older) {
+      closing = `Ainda que os valores normativos do TACCSi não se apliquem a esta idade, a literatura em PE documenta que crianças com desenvolvimento típico de 8–11 anos atingem ~95% em relativas e interrogativas-Qu de objecto (Martins, 2022). O perfil observado sugere áreas de fragilidade que merecem <strong>avaliação de linguagem complementar</strong>.`;
+    } else if (anyLow && younger) {
+      closing = `Ainda que a aquisição destas estruturas ainda esteja em curso nesta idade, o perfil observado justifica <strong>monitorização</strong> e integração com outras medidas de linguagem, especialmente se acompanhado de outros sinais clínicos.`;
+    } else if (anyLow) {
+      // in-range age but partial protocol (tk !== 'all')
+      closing = `O perfil observado mostra áreas de fragilidade que merecem <strong>integração com outras medidas clínicas</strong>. Para uma leitura normativa completa, recomenda-se administração do protocolo completo do TACCSi.`;
+    } else {
+      closing = `O perfil observado é compatível com uma trajectória desenvolvimental típica para a idade.`;
+    }
+  }
+
+  return `<div style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Síntese clínica</div>${opening}${body}${closing}`;
+}
+
 function finish() {
   stopTimer();
   S.blocked = false;
@@ -1989,58 +2121,99 @@ function finish() {
   // Age context flags
   const younger = S.am > 0 && S.am < 64;   // < 5;4
   const older   = S.am > 82;                // > 6;10
-  // Cross-task convergence (computed later)
-  let roLow = false, ioLow = false;
+
+  // ═══════════════════════════════════════════════════════════
+  // COMPUTE ALL METRICS UPFRONT (used by synthesis + task cards)
+  // ═══════════════════════════════════════════════════════════
+  const pAtiva   = n2aAtiva   > 0 ? Math.round(s2aAtiva/n2aAtiva*100)     : null;
+  const pPassiva = n2aPassiva > 0 ? Math.round(s2aPassiva/n2aPassiva*100) : null;
+  const pRS      = n2bRS > 0 ? Math.round(s2bRS/n2bRS*100) : null;
+  const pRO      = n2bRO > 0 ? Math.round(s2bRO/n2bRO*100) : null;
+  const pIS      = n2bIS > 0 ? Math.round(s2bIS/n2bIS*100) : null;
+  const pIO      = n2bIO > 0 ? Math.round(s2bIO/n2bIO*100) : null;
+  const pGram    = n2cGram > 0 ? Math.round(s2cGram/n2cGram*100) : null;
+  const pConc    = n2cConc > 0 ? Math.round(s2cConc/n2cConc*100) : null;
+  const pOrd     = n2cOrd  > 0 ? Math.round(s2cOrd/n2cOrd*100)   : null;
+
+  const zAtiva   = canC && pAtiva   !== null ? zScore(s2aAtiva/Math.max(n2aAtiva,1),     'Active',         ng) : null;
+  const zPassiva = canC && pPassiva !== null ? zScore(s2aPassiva/Math.max(n2aPassiva,1), 'Passive',        ng) : null;
+  const zRS      = canC && pRS !== null ? zScore(s2bRS/Math.max(n2bRS,1), 'RelSubj', ng) : null;
+  const zRO      = canC && pRO !== null ? zScore(s2bRO/Math.max(n2bRO,1), 'RelObj',  ng) : null;
+  const zIS      = canC && pIS !== null ? zScore(s2bIS/Math.max(n2bIS,1), 'WhQSubj', ng) : null;
+  const zIO      = canC && pIO !== null ? zScore(s2bIO/Math.max(n2bIO,1), 'WhQObj',  ng) : null;
+  const zGram    = canC && pGram !== null ? zScore(s2cGram/Math.max(n2cGram,1), 'Grammatical',    ng) : null;
+  const zConc    = canC && pConc !== null ? zScore(s2cConc/Math.max(n2cConc,1), 'AgrConcordance', ng) : null;
+  const zOrd     = canC && pOrd  !== null ? zScore(s2cOrd/Math.max(n2cOrd,1),   'AgrOrder',       ng) : null;
+
+  // Low flags — consistent definition: z < -1 if norms available, else raw % cutoff
+  const actLow   = zAtiva   !== null ? zAtiva   < -1 : pAtiva   !== null && pAtiva   < 75;
+  const passLow  = zPassiva !== null ? zPassiva < -1 : pPassiva !== null && pPassiva < 75;
+  const rsLow    = zRS      !== null ? zRS      < -1 : pRS      !== null && pRS      < 75;
+  const roLow    = zRO      !== null ? zRO      < -1 : pRO      !== null && pRO      < 65;
+  const isLow    = zIS      !== null ? zIS      < -1 : pIS      !== null && pIS      < 80;
+  const ioLow    = zIO      !== null ? zIO      < -1 : pIO      !== null && pIO      < 65;
+  const gramLow  = zGram    !== null ? zGram    < -1 : pGram    !== null && pGram    < 70;
+  const concLow  = zConc    !== null ? zConc    < -1 : pConc    !== null && pConc    < 55;
+  const ordLow   = zOrd     !== null ? zOrd     < -1 : pOrd     !== null && pOrd     < 45;
+
+  const cscVal = canC ? csc(tot, NORMS[ng]) : null;
+  const risk = canC && cscVal < 85;
+
+  const M = {
+    tk, am: S.am, ageStr, canC, ng, csc: cscVal, risk, younger, older, diag: S.diag,
+    pAtiva, pPassiva, pRS, pRO, pIS, pIO, pGram, pConc, pOrd,
+    zAtiva, zPassiva, zRS, zRO, zIS, zIO, zGram, zConc, zOrd,
+    actLow, passLow, rsLow, roLow, isLow, ioLow, gramLow, concLow, ordLow,
+    tot, mx,
+    NORMS
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // SYNTHESIS PARAGRAPH — always at the top
+  // ═══════════════════════════════════════════════════════════
+  document.getElementById('r-synth').innerHTML = buildSynthesis(M);
 
   if (tk!=='aware') {
-    // ── 2A: Passivas ──
-    const pctAtiva   = n2aAtiva>0   ? Math.round(s2aAtiva/n2aAtiva*100)   : 0;
-    const pctPassiva = n2aPassiva>0 ? Math.round(s2aPassiva/n2aPassiva*100): 0;
-    const asym2A     = pctAtiva - pctPassiva;
-    const zA_pass    = canC ? zScore(s2aPassiva/Math.max(n2aPassiva,1), 'Passive', ng) : null;
-    const zA_act     = canC ? zScore(s2aAtiva/Math.max(n2aAtiva,1),     'Active',  ng) : null;
-    const passLow    = zA_pass !== null ? zA_pass < -1 : pctPassiva < 75;
-    const actLow     = zA_act  !== null ? zA_act  < -1 : pctAtiva   < 75;
+    // ═══════════════════════════════════════════════════════════
+    // 2A — Compreensão de Passivas (always generates a clinical note)
+    // ═══════════════════════════════════════════════════════════
+    const zPassStr = zPassiva !== null ? ` (z = ${zPassiva.toFixed(1)})` : '';
+    const zActStr  = zAtiva   !== null ? ` (z = ${zAtiva.toFixed(1)})`   : '';
     let note2A = '';
 
-    if (passLow || actLow) {
-      const zPassStr = zA_pass !== null ? ` (z = ${zA_pass.toFixed(1)})` : '';
-      const zActStr  = zA_act  !== null ? ` (z = ${zA_act.toFixed(1)})`  : '';
-
-      if (actLow && passLow) {
-        note2A = `O desempenho foi baixo tanto nas frases ativas (${pctAtiva}%${zActStr}) como nas frases passivas longas (${pctPassiva}%${zPassStr}). ` +
-          `As frases ativas são estruturalmente simples e estão adquiridas muito cedo — dificuldades neste tipo de frases são pouco comuns e sugerem que o problema pode não ser específico às estruturas passivas. ` +
-          `Podem estar em causa dificuldades de compreensão mais gerais, de atenção, ou de interpretação da tarefa de selecção de imagem. ` +
-          (canC
-            ? `O desempenho em ambos os tipos de frases está abaixo do esperado para a faixa etária desta criança (${NORMS[ng].label}). Recomenda-se avaliar a compreensão de frases simples e observar se as dificuldades se estendem a outras tarefas.`
+    if (!actLow && !passLow) {
+      // PROFILE: within expected in both
+      note2A = `O desempenho está dentro do esperado tanto nas frases ativas (${pAtiva}%${zActStr}) como nas frases passivas longas (${pPassiva}%${zPassStr}). `
+        + `Nestas frases passivas, o participante que sofre a acção (tema) aparece antes do participante que a realiza (agente), ao contrário das ativas — ex: ativa <em>"a mãe penteou a filha"</em> vs. passiva <em>"a filha foi penteada pela mãe"</em>. A aquisição plena desta estrutura prolonga-se até à idade escolar (Estrela, 2014; Agostinho, 2020). `
+        + (canC
+            ? `O resultado está dentro dos limites normativos para a faixa ${NORMS[ng].label} e não há indicadores de fragilidade específica na compreensão desta estrutura.`
             : younger
-              ? `Dificuldades nas frases ativas nesta faixa etária merecem atenção. Recomenda-se avaliar a compreensão de frases simples para clarificar o perfil.`
-              : `Para uma criança desta idade, dificuldades nas frases ativas são clinicamente relevantes e justificam avaliação mais aprofundada.`);
+              ? `Mesmo sem normas disponíveis para esta faixa etária, o desempenho observado é compatível com uma trajectória desenvolvimental típica; em PE, aos 5 anos, a maioria das crianças com desenvolvimento típico já compreende estas frases (Estrela, 2014; Agostinho, 2020).`
+              : `Em PE, aos 8 anos, crianças com desenvolvimento típico atingem ~97,5% nas passivas agentivas (Agostinho, 2020) — o desempenho observado é compatível com esse padrão.`);
 
-      } else if (!actLow && passLow) {
-        note2A = `O desempenho foi claramente melhor nas frases ativas (${pctAtiva}%${zActStr}) do que nas frases passivas longas (${pctPassiva}%${zPassStr}). ` +
-          `As frases passivas longas com verbos de acção são estruturas de aquisição tardia — a sua compreensão plena prolonga-se até aos 8 anos — ` +
-          `e são particularmente sensíveis a dificuldades de linguagem (Costa, 2024; Montgomery & Evans, 2009). ` +
-          `Nestas frases, o argumento tema precede o argumento agente (ex: "A filha foi penteada pela mãe"), ` +
-          `ao contrário do que acontece nas frases ativas (ex: "A mãe penteou a filha"). ` +
-          `O bom desempenho nas ativas indica que a dificuldade é específica à estrutura passiva, e não uma dificuldade geral de compreensão. ` +
-          (canC
-            ? `O desempenho nas frases passivas está ${zA_pass < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
-              `(z = ${zA_pass.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.Passive.M*100)}% para ${NORMS[ng].label}). ` +
-              `${zA_pass < -2 ? 'O resultado aponta para a necessidade de uma avaliação de linguagem mais abrangente.' : 'Recomenda-se integrar com o desempenho nas relativas e interrogativas de objeto para uma leitura de conjunto.'}`
+    } else if (passLow && !actLow) {
+      // PROFILE: classic asymmetry (passive difficulty, active preserved)
+      note2A = `O desempenho foi claramente melhor nas frases ativas (${pAtiva}%${zActStr}) do que nas passivas longas (${pPassiva}%${zPassStr}). `
+        + `Nas passivas longas, a ordem dos participantes é invertida: o <strong>tema</strong> (quem sofre a acção) aparece antes do <strong>agente</strong> (quem a realiza), como em <em>"a filha foi penteada pela mãe"</em>, ao contrário das ativas (<em>"a mãe penteou a filha"</em>). Esta estrutura é de aquisição tardia — a sua compreensão plena prolonga-se até aos 8 anos e é particularmente sensível a dificuldades de linguagem (Costa, 2024; Montgomery &amp; Evans, 2009). O bom desempenho nas ativas indica que a dificuldade é específica à estrutura passiva e não uma dificuldade geral de compreensão frásica. `
+        + (canC
+            ? `O desempenho nas passivas está ${zPassiva < -2 ? 'marcadamente ' : ''}abaixo do esperado (z = ${zPassiva.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.Passive.M*100)}% para ${NORMS[ng].label}). ${zPassiva < -2 ? 'O resultado aponta para avaliação de linguagem abrangente.' : 'Recomenda-se integrar com o desempenho nas relativas e interrogativas-Qu de objecto para uma leitura de conjunto.'}`
             : younger
-              ? `Os dados normativos do TACCSi não cobrem esta faixa etária. A aquisição das passivas ainda está em curso nesta idade, pelo que o resultado deve ser interpretado com cuidado. ` +
-                `A título de referência, a maioria das crianças com desenvolvimento típico já compreende estas frases aos 5 anos (Estrela, 2014; Agostinho, 2020).`
-              : `Para uma criança desta idade, a aquisição típica das passivas já deveria estar consolidada. ` +
-                `Dificuldades persistentes nesta estrutura têm relevância clínica acrescida e justificam avaliação de linguagem mais abrangente.`);
+              ? `Os dados normativos do TACCSi não cobrem esta faixa etária e a aquisição das passivas ainda está em curso. A título de referência, em PE, aos 5 anos, 90% das crianças com desenvolvimento típico respondem correctamente a passivas agentivas longas (Estrela, 2014; Agostinho, 2020). A vigilância clínica é recomendada, sobretudo se acompanhada de outros sinais.`
+              : `Para uma criança desta idade, a aquisição das passivas já deveria estar consolidada — em PE, aos 8 anos, crianças com desenvolvimento típico atingem 97,5% (Agostinho, 2020), enquanto crianças com PEA em idade escolar ficam nos 72,86% (Costa, 2024). Dificuldades persistentes têm relevância clínica acrescida.`);
 
-      } else {
-        note2A = `O desempenho nas frases passivas longas (${pctPassiva}%${zPassStr}) foi superior ao das frases ativas (${pctAtiva}%${zActStr}), o que é um padrão inesperado. ` +
-          `As frases ativas são adquiridas muito cedo e são geralmente mais fáceis de compreender. ` +
-          `Este resultado pode reflectir dificuldades de atenção, dificuldade em interpretar a tarefa de selecção de imagem, ` +
-          `ou uma estratégia de resposta não dependente do conteúdo linguístico. ` +
-          `Recomenda-se observar o comportamento durante a tarefa e considerar reaplicação.`;
-      }
+    } else if (actLow && passLow) {
+      // PROFILE: both low — likely non-syntactic factor
+      note2A = `O desempenho foi baixo tanto nas frases ativas (${pAtiva}%${zActStr}) como nas passivas (${pPassiva}%${zPassStr}). `
+        + `As frases ativas (<em>"a mãe penteou a filha"</em>) têm ordem canónica agente-tema e estão adquiridas muito cedo — dificuldades neste tipo de frases são pouco comuns e sugerem que o problema não é específico às passivas. Podem estar em causa dificuldades de compreensão mais gerais, de atenção, de interpretação da tarefa de selecção de imagem, ou uma estratégia de resposta não dependente da frase ouvida. `
+        + (canC
+            ? `O desempenho em ambos os tipos de frases está abaixo do esperado para ${NORMS[ng].label}. Recomenda-se avaliar a compreensão de frases simples noutras tarefas e observar o comportamento durante a administração.`
+            : `Dificuldades em frases ativas nesta faixa etária justificam <strong>avaliação de linguagem mais aprofundada</strong>, bem como observação do desempenho noutras tarefas de compreensão.`);
+
+    } else {
+      // PROFILE: atypical (active low, passive OK)
+      note2A = `O desempenho nas passivas (${pPassiva}%${zPassStr}) foi superior ao das ativas (${pAtiva}%${zActStr}), um padrão inesperado. `
+        + `As ativas são adquiridas muito cedo e são geralmente mais fáceis de compreender do que as passivas. Este resultado pode reflectir dificuldades de atenção, dificuldade em interpretar a tarefa de selecção de imagem, ou uma estratégia de resposta não dependente da frase. `
+        + `<strong>Recomenda-se observar o comportamento durante a administração e considerar reaplicação</strong>.`;
     }
 
     html += taskCard('2A','#2a8a8a','Compreensão de Passivas',
@@ -2050,47 +2223,48 @@ function finish() {
        {label:'Passivas — não-canónicas',   score:s2aPassiva, max:n2aPassiva, color:'#1a6a6a'}],
       note2A, canC);
 
-    // ── 2B: Relativas ──
-    const pctRS   = n2bRS>0 ? Math.round(s2bRS/n2bRS*100) : 0;
-    const pctRO   = n2bRO>0 ? Math.round(s2bRO/n2bRO*100) : 0;
-    const asym2BRel = pctRS - pctRO;
-    const zRS     = canC ? zScore(s2bRS/Math.max(n2bRS,1), 'RelSubj', ng) : null;
-    const zRO_sc  = canC ? zScore(s2bRO/Math.max(n2bRO,1), 'RelObj',  ng) : null;
-    const rsLow   = zRS    !== null ? zRS    < -1 : pctRS < 75;
-    roLow         = zRO_sc !== null ? zRO_sc < -1 : pctRO < 65;
-    let noteRel   = '';
+    // ═══════════════════════════════════════════════════════════
+    // 2B·Rel — Relativas de Sujeito e Objeto (always generates note)
+    // ═══════════════════════════════════════════════════════════
+    const zRSStr = zRS !== null ? ` (z = ${zRS.toFixed(1)})` : '';
+    const zROStr = zRO !== null ? ` (z = ${zRO.toFixed(1)})` : '';
+    let noteRel = '';
 
-    if (roLow || rsLow) {
-      const zRSStr = zRS    !== null ? ` (z = ${zRS.toFixed(1)})`    : '';
-      const zROStr = zRO_sc !== null ? ` (z = ${zRO_sc.toFixed(1)})` : '';
-
-      if (rsLow && roLow) {
-        noteRel = `O desempenho foi baixo tanto nas relativas de sujeito (${pctRS}%${zRSStr}) como nas relativas de objeto (${pctRO}%${zROStr}). ` +
-          `As relativas de sujeito são estruturas adquiridas cedo e raramente problemáticas — dificuldades neste tipo de frases sugerem que o problema pode não ser específico às estruturas de aquisição mais tardia, ` +
-          `podendo reflectir dificuldades mais gerais na compreensão de frases sintacticamente complexas (Costa, Lobo & Silva, 2011). ` +
-          (canC
-            ? `O desempenho em ambos os tipos de relativas está abaixo do esperado para a faixa etária desta criança (${NORMS[ng].label}). Recomenda-se avaliação de linguagem mais abrangente.`
+    if (!rsLow && !roLow) {
+      noteRel = `O desempenho está dentro do esperado tanto nas relativas de sujeito (${pRS}%${zRSStr}) como nas relativas de objecto (${pRO}%${zROStr}). `
+        + `Nas relativas de objecto, o elemento relativizado (aquele a que a relativa se refere) é o <strong>objecto</strong> do verbo da relativa — ex: <em>"mostra-me o menino que o pai molhou"</em>, em que "o menino" é quem sofre a acção de molhar. Estas frases são mais exigentes do que as relativas de sujeito (<em>"mostra-me o menino que molhou o pai"</em>) porque o sujeito da relativa ("o pai") interpõe-se entre o elemento deslocado e a sua posição original, uma configuração conhecida como <strong>intervenção</strong>. `
+        + (canC
+            ? `O desempenho está dentro dos limites normativos para ${NORMS[ng].label}, sem indicadores de fragilidade nesta estrutura.`
             : older
-              ? `Para uma criança desta idade, dificuldades nas relativas de sujeito são clinicamente significativas e justificam avaliação aprofundada.`
-              : `Recomenda-se avaliar a compreensão de frases complexas noutros contextos para confirmar o perfil.`);
+              ? `Em PE, aos 8–11 anos, crianças com desenvolvimento típico atingem 95% em relativas de objecto; crianças com PDL ou PEA ficam nos 52–55% nesta mesma idade (Martins, 2022). O desempenho observado é compatível com o padrão típico.`
+              : `Em PE, aos 4–5 anos, crianças com desenvolvimento típico acertam em 98% das relativas de sujeito e 68% das de objecto (Costa, Lobo &amp; Silva, 2011). O desempenho observado é compatível com uma trajectória desenvolvimental típica.`);
 
-      } else if (!rsLow && roLow) {
-        noteRel = `O desempenho foi claramente melhor nas relativas de sujeito (${pctRS}%${zRSStr}) do que nas relativas de objeto (${pctRO}%${zROStr}). ` +
-          `As relativas de objeto são estruturas de aquisição tardia e particularmente sensíveis a dificuldades de linguagem — ` +
-          `em Português Europeu, crianças com perturbação do desenvolvimento da linguagem apresentam dificuldades persistentes nestas frases muito para além da idade esperada (Martins, 2022). ` +
-          `Nestas frases, o argumento tema precede o argumento agente dentro da oração relativa ` +
-          `(ex: "Mostra-me o menino que o pai molhou"), ao contrário das relativas de sujeito ` +
-          `(ex: "Mostra-me o menino que molhou o pai"), e o sujeito da relativa intervém entre o elemento deslocado e a sua posição de base, ` +
-          `tornando a interpretação mais exigente. ` +
-          `O bom desempenho nas relativas de sujeito indica que a dificuldade é específica às relativas de objeto e não uma dificuldade geral com frases complexas. ` +
-          (canC
-            ? `O desempenho nas relativas de objeto está ${zRO_sc < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
-              `(z = ${zRO_sc.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.RelObj.M*100)}% para ${NORMS[ng].label}). ` +
-              `${zRO_sc < -2 ? 'O resultado aponta para a necessidade de avaliação de linguagem mais abrangente.' : 'Recomenda-se comparar com o desempenho nas interrogativas-Qu de objeto para uma leitura de conjunto.'}`
+    } else if (roLow && !rsLow) {
+      // CLASSIC asymmetry
+      const conv = roLow && ioLow;
+      noteRel = `O desempenho foi claramente melhor nas relativas de sujeito (${pRS}%${zRSStr}) do que nas relativas de objecto (${pRO}%${zROStr}) — o padrão de <strong>assimetria clínica clássica</strong>. `
+        + `Nas relativas de objecto, o elemento relativizado é o <strong>objecto</strong> do verbo da relativa (ex: <em>"o menino que o pai molhou"</em>, em que "o menino" é quem é molhado) e o sujeito da relativa ("o pai") interpõe-se entre o elemento deslocado e a sua posição original — uma configuração de <strong>intervenção</strong> que torna a interpretação mais exigente. Esta estrutura é descrita como marcador clínico robusto de PDL em PE: crianças com PDL de 8–11 anos ficam nos 55%, enquanto crianças com desenvolvimento típico da mesma idade atingem 95% (Martins, 2022; Costa, Lobo &amp; Silva, 2011). O bom desempenho nas relativas de sujeito indica que a dificuldade é específica às de objecto, não uma dificuldade geral com frases complexas. `
+        + (canC
+            ? `O desempenho nas relativas de objecto está ${zRO < -2 ? 'marcadamente ' : ''}abaixo do esperado (z = ${zRO.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.RelObj.M*100)}% para ${NORMS[ng].label}). `
+              + (conv ? `<strong>⚠ Em combinação com dificuldade nas interrogativas-Qu de objecto (ver 2B·Int), o perfil constitui um sinal clínico consistente.</strong>` : `Recomenda-se comparar com o desempenho nas interrogativas-Qu de objecto para uma leitura de conjunto do perfil sintáctico.`)
             : younger
-              ? `Os dados normativos do TACCSi não cobrem esta faixa etária. A aquisição das relativas de objeto ainda está em curso nesta faixa etária, pelo que o resultado deve ser interpretado com cuidado.`
-              : `Para uma criança desta idade, a aquisição típica das relativas de objeto já deveria estar consolidada. Dificuldades persistentes nesta estrutura têm relevância clínica acrescida.`);
-      }
+              ? `Os dados normativos do TACCSi não cobrem esta faixa etária e a aquisição das relativas de objecto ainda está em curso (68% aos 4–5 anos em TD — Costa, Lobo &amp; Silva, 2011). ${conv ? 'Dificuldades convergentes nas interrogativas-Qu de objecto são, ainda assim, um sinal a acompanhar.' : 'Recomenda-se monitorização.'}`
+              : `Para uma criança desta idade, a aquisição típica das relativas de objecto já deveria estar consolidada (95% aos 8–11 em TD vs. 55% em PDL — Martins, 2022). <strong>Dificuldades persistentes têm relevância clínica acrescida.</strong>`);
+
+    } else if (rsLow && !roLow) {
+      // ATYPICAL: RS low but RO OK
+      noteRel = `Observa-se um padrão atípico: desempenho reduzido nas relativas de sujeito (${pRS}%${zRSStr}) apesar de desempenho preservado nas relativas de objecto (${pRO}%${zROStr}). `
+        + `As relativas de sujeito (<em>"mostra-me o menino que molhou o pai"</em>) são estruturas de aquisição precoce e raramente problemáticas (Costa, Lobo &amp; Silva, 2011). Este padrão invertido pode reflectir <strong>dificuldades de atenção</strong>, <strong>dificuldade em interpretar a tarefa</strong> de selecção esquerda/direita, ou uma estratégia de resposta não baseada na frase. Recomenda-se observar o comportamento durante a administração e considerar reaplicação.`;
+
+    } else {
+      // Both low
+      noteRel = `O desempenho foi baixo tanto nas relativas de sujeito (${pRS}%${zRSStr}) como nas relativas de objecto (${pRO}%${zROStr}). `
+        + `As relativas de sujeito são estruturas adquiridas cedo (98% aos 4–5 em TD — Costa, Lobo &amp; Silva, 2011) e raramente problemáticas. Dificuldades neste tipo de frases sugerem que o problema não é específico às estruturas de aquisição tardia: podem estar em causa dificuldades mais gerais de compreensão, de atenção, de interpretação da tarefa, ou uma estratégia de resposta não baseada na frase. `
+        + (canC
+            ? `O desempenho em ambos os tipos está abaixo do esperado para ${NORMS[ng].label}. Recomenda-se <strong>avaliação de linguagem mais abrangente</strong>, bem como observação do comportamento em outras tarefas de compreensão.`
+            : older
+              ? `Para uma criança desta idade, dificuldades nas relativas de sujeito são clinicamente significativas e justificam <strong>avaliação aprofundada</strong>.`
+              : `Recomenda-se <strong>monitorização</strong> e avaliação da compreensão de frases complexas noutros contextos.`);
     }
 
     html += taskCard('2B·Rel','#7c5cbf','Relativas de Sujeito e de Objeto',
@@ -2100,49 +2274,48 @@ function finish() {
        {label:'RO — objeto (marcador clínico)',  score:s2bRO, max:n2bRO, color:'#5a3a9a'}],
       noteRel, canC);
 
-    // ── 2B: Interrogativas ──
-    const pctIS   = n2bIS>0 ? Math.round(s2bIS/n2bIS*100) : 0;
-    const pctIO   = n2bIO>0 ? Math.round(s2bIO/n2bIO*100) : 0;
-    const asym2BInt = pctIS - pctIO;
-    const zIS     = canC ? zScore(s2bIS/Math.max(n2bIS,1), 'WhQSubj', ng) : null;
-    const zIO_sc  = canC ? zScore(s2bIO/Math.max(n2bIO,1), 'WhQObj',  ng) : null;
-    const isLow   = zIS    !== null ? zIS    < -1 : pctIS < 80;
-    ioLow         = zIO_sc !== null ? zIO_sc < -1 : pctIO < 65;
-    let noteInt   = '';
+    // ═══════════════════════════════════════════════════════════
+    // 2B·Int — Interrogativas-Qu de Sujeito e Objeto (always generates note)
+    // ═══════════════════════════════════════════════════════════
+    const zISStr = zIS !== null ? ` (z = ${zIS.toFixed(1)})` : '';
+    const zIOStr = zIO !== null ? ` (z = ${zIO.toFixed(1)})` : '';
+    const convSignal = roLow && ioLow;
+    let noteInt = '';
 
-    if (ioLow || isLow) {
-      const zISStr = zIS    !== null ? ` (z = ${zIS.toFixed(1)})`    : '';
-      const zIOStr = zIO_sc !== null ? ` (z = ${zIO_sc.toFixed(1)})` : '';
-      const convSignal = roLow && ioLow;
+    if (!isLow && !ioLow) {
+      noteInt = `O desempenho está dentro do esperado tanto nas interrogativas-Qu de sujeito (${pIS}%${zISStr}) como nas interrogativas-Qu de objecto (${pIO}%${zIOStr}). `
+        + `Nas interrogativas-Qu de objecto, a palavra interrogativa ("que menina") refere-se ao <strong>objecto</strong> do verbo — ex: <em>"que menina é que a mãe abraçou?"</em>, em que "que menina" é quem é abraçada. Tal como nas relativas de objecto, o sujeito ("a mãe") interpõe-se entre a palavra-Qu e a sua posição original, uma configuração de <strong>intervenção</strong> (Costa, Lobo &amp; Silva, 2011). `
+        + (canC
+            ? `O desempenho está dentro dos limites normativos para ${NORMS[ng].label}.`
+            : older
+              ? `Em PE, aos 8–11 anos, crianças com desenvolvimento típico atingem 95% nestas estruturas; crianças com PDL ficam nos 61% (Martins, 2022). O desempenho observado é compatível com o padrão típico.`
+              : `Em PE, aos 5 anos, crianças com desenvolvimento típico atingem 97% nas interrogativas-Qu de sujeito e 69% nas de objecto (Cerejeira, 2009; Baião &amp; Lobo, 2014). O desempenho observado é compatível com uma trajectória desenvolvimental típica.`);
 
-      if (isLow && ioLow) {
-        noteInt = `O desempenho foi baixo tanto nas interrogativas-Qu de sujeito (${pctIS}%${zISStr}) como nas interrogativas-Qu de objeto (${pctIO}%${zIOStr}). ` +
-          `As interrogativas-Qu de sujeito são estruturas adquiridas cedo e raramente problemáticas (Cerejeira, 2009; Baião & Lobo, 2014) — dificuldades neste tipo de frases sugerem que o problema pode não ser específico às estruturas de aquisição mais tardia ` +
-          `e pode reflectir dificuldades mais gerais na compreensão ou no processamento da tarefa. ` +
-          (canC ? `O desempenho em ambos os tipos de interrogativas está abaixo do esperado para a faixa etária desta criança (${NORMS[ng].label}). Recomenda-se avaliação de linguagem mais abrangente.` : '');
-
-      } else if (!isLow && ioLow) {
-        noteInt = `O desempenho foi claramente melhor nas interrogativas-Qu de sujeito (${pctIS}%${zISStr}) do que nas interrogativas-Qu de objeto (${pctIO}%${zIOStr}). ` +
-          `As interrogativas-Qu de objeto com restrição lexical são estruturas de aquisição tardia e particularmente sensíveis a dificuldades de linguagem, ` +
-          `partilhando com as relativas de objeto o mesmo mecanismo que torna a interpretação mais exigente: ` +
-          `o argumento tema precede o argumento agente (ex: "Que menina é que a mãe abraçou?"), ` +
-          `ao contrário das interrogativas-Qu de sujeito (ex: "Que menina é que abraçou a mãe?"), ` +
-          `e o sujeito intervém entre o constituinte-Qu deslocado e a sua posição de base (Costa, Lobo & Silva, 2011; Cerejeira, 2009; Baião & Lobo, 2014). ` +
-          `O bom desempenho nas interrogativas-Qu de sujeito indica que a dificuldade é específica às interrogativas-Qu de objeto e não uma dificuldade geral de compreensão. ` +
-          (canC
-            ? `O desempenho nas interrogativas-Qu de objeto está ${zIO_sc < -2 ? 'marcadamente ' : ''}abaixo do esperado para esta faixa etária ` +
-              `(z = ${zIO_sc.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.WhQObj.M*100)}% para ${NORMS[ng].label}). ` +
-              (convSignal
-                ? `⚠ O desempenho abaixo do esperado tanto nas relativas de objeto como nas interrogativas-Qu de objeto — duas estruturas de aquisição tardia que partilham o mesmo mecanismo sintático — constitui um sinal clínico consistente que justifica avaliação de linguagem mais abrangente.`
-                : `Recomenda-se integrar com o desempenho nas relativas de objeto para uma leitura de conjunto do perfil sintático.`)
+    } else if (ioLow && !isLow) {
+      // CLASSIC asymmetry
+      noteInt = `O desempenho foi claramente melhor nas interrogativas-Qu de sujeito (${pIS}%${zISStr}) do que nas interrogativas-Qu de objecto (${pIO}%${zIOStr}) — o padrão de <strong>assimetria clínica clássica</strong>. `
+        + `Nas interrogativas-Qu de objecto, a palavra interrogativa ("que menina") refere-se a <strong>quem sofre a acção</strong>, não a quem a realiza — ex: <em>"que menina é que a mãe abraçou?"</em> (é a menina que é abraçada), ao contrário das de sujeito <em>"que menina é que abraçou a mãe?"</em> (é a menina que abraça). Tal como nas relativas de objecto, esta estrutura partilha a configuração de <strong>intervenção</strong>: o sujeito ("a mãe") interpõe-se entre a palavra-Qu deslocada e a sua posição original (Costa, Lobo &amp; Silva, 2011; Cerejeira, 2009; Baião &amp; Lobo, 2014). O bom desempenho nas interrogativas-Qu de sujeito indica que a dificuldade é específica às de objecto. `
+        + (canC
+            ? `O desempenho está ${zIO < -2 ? 'marcadamente ' : ''}abaixo do esperado (z = ${zIO.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.WhQObj.M*100)}% para ${NORMS[ng].label}). `
+              + (convSignal
+                  ? `<strong>⚠ Convergência clínica:</strong> dificuldades simultâneas em relativas de objecto e interrogativas-Qu de objecto — duas estruturas de aquisição tardia que partilham a mesma configuração sintáctica — constituem um sinal clínico robusto, descrito como característico de Perturbação do Desenvolvimento da Linguagem em Português Europeu (Martins, 2022). <strong>Justifica-se avaliação de linguagem abrangente.</strong>`
+                  : `Recomenda-se integrar com o desempenho nas relativas de objecto para uma leitura de conjunto do perfil sintáctico.`)
             : younger
-              ? `Os dados normativos do TACCSi não cobrem esta faixa etária. A aquisição destas estruturas ainda está em curso nesta idade, pelo que o resultado deve ser interpretado com cuidado. ` +
-                (convSignal ? `Dificuldades em ambas as estruturas de aquisição tardia (relativas e interrogativas-Qu de objeto) são no entanto um sinal a acompanhar.` : '')
-              : `Para uma criança desta idade, a aquisição típica destas estruturas já deveria estar consolidada. ` +
-                (convSignal
-                  ? `⚠ Dificuldades persistentes tanto nas relativas de objeto como nas interrogativas-Qu de objeto nesta idade — duas estruturas de aquisição tardia com o mesmo mecanismo sintático — não podem ser atribuídas a imaturidade desenvolvimental e justificam avaliação aprofundada.`
-                  : `Dificuldades persistentes nesta estrutura têm relevância clínica acrescida.`));
-      }
+              ? `Os dados normativos do TACCSi não cobrem esta faixa etária e a aquisição destas estruturas ainda está em curso. Em PE, aos 5 anos, crianças com desenvolvimento típico atingem 69% nas interrogativas-Qu de objecto (Cerejeira, 2009). ${convSignal ? '<strong>Dificuldades convergentes em ambas as estruturas de aquisição tardia são, ainda assim, um sinal a acompanhar.</strong>' : 'Recomenda-se monitorização.'}`
+              : `Para uma criança desta idade, a aquisição típica destas estruturas já deveria estar consolidada (95% aos 8–11 em TD vs. 61% em PDL — Martins, 2022). ${convSignal ? '<strong>⚠ Dificuldades persistentes tanto nas relativas de objecto como nas interrogativas-Qu de objecto não podem ser atribuídas a imaturidade desenvolvimental e justificam avaliação aprofundada.</strong>' : 'Dificuldades persistentes nesta estrutura têm relevância clínica acrescida.'}`);
+
+    } else if (isLow && !ioLow) {
+      // ATYPICAL
+      noteInt = `Observa-se um padrão atípico: desempenho reduzido nas interrogativas-Qu de sujeito (${pIS}%${zISStr}) apesar de desempenho preservado nas interrogativas-Qu de objecto (${pIO}%${zIOStr}). `
+        + `As interrogativas-Qu de sujeito (<em>"que menina é que abraçou a mãe?"</em>) são estruturas de aquisição precoce — aos 5 anos, crianças com desenvolvimento típico atingem 97% (Cerejeira, 2009; Baião &amp; Lobo, 2014). Este padrão invertido pode reflectir <strong>dificuldades de atenção</strong>, <strong>dificuldade em interpretar a tarefa</strong>, ou uma estratégia de resposta não baseada na frase. Recomenda-se observar o comportamento durante a administração.`;
+
+    } else {
+      // Both low
+      noteInt = `O desempenho foi baixo tanto nas interrogativas-Qu de sujeito (${pIS}%${zISStr}) como nas de objecto (${pIO}%${zIOStr}). `
+        + `As interrogativas-Qu de sujeito são estruturas adquiridas cedo (97% aos 5 em TD — Cerejeira, 2009; Baião &amp; Lobo, 2014) e raramente problemáticas. Dificuldades neste tipo de frases sugerem que o problema não é específico às estruturas de aquisição tardia, podendo reflectir dificuldades mais gerais na compreensão ou no processamento da tarefa. `
+        + (canC
+            ? `O desempenho em ambos os tipos está abaixo do esperado para ${NORMS[ng].label}. Recomenda-se <strong>avaliação de linguagem mais abrangente</strong>.`
+            : `Recomenda-se <strong>avaliação complementar</strong> da compreensão de frases noutros contextos.`);
     }
 
     html += taskCard('2B·Int','#e8734a','Interrogativas-Q de Sujeito e de Objeto',
@@ -2154,71 +2327,74 @@ function finish() {
   }
 
   if (tk!=='comp') {
-    // ── 2C: Consciência sintática ──
-    const pctConc = n2cConc>0 ? Math.round(s2cConc/n2cConc*100) : 0;
-    const pctOrd  = n2cOrd>0  ? Math.round(s2cOrd/n2cOrd*100)   : 0;
-    const pctGram = n2cGram>0 ? Math.round(s2cGram/n2cGram*100) : 0;
-    const zConc   = canC ? zScore(s2cConc/Math.max(n2cConc,1), 'AgrConcordance', ng) : null;
-    const zOrd_sc = canC ? zScore(s2cOrd/Math.max(n2cOrd,1),   'AgrOrder',       ng) : null;
-    const zGram   = canC ? zScore(s2cGram/Math.max(n2cGram,1),  'Grammatical',    ng) : null;
-    const concLow = zConc   !== null ? zConc   < -1 : pctConc < 55;
-    const ordLow  = zOrd_sc !== null ? zOrd_sc < -1 : pctOrd  < 45;
-    const gramLow = zGram   !== null ? zGram   < -1 : pctGram < 70;
+    // ═══════════════════════════════════════════════════════════
+    // 2C — Consciência Sintáctica (always generates a clinical note)
+    // ═══════════════════════════════════════════════════════════
+    const zConcStr = zConc !== null ? ` (z = ${zConc.toFixed(1)})` : '';
+    const zOrdStr  = zOrd  !== null ? ` (z = ${zOrd.toFixed(1)})`  : '';
+    const zGramStr = zGram !== null ? ` (z = ${zGram.toFixed(1)})` : '';
     let note2C = '';
 
-    const zConcStr = zConc   !== null ? ` (z = ${zConc.toFixed(1)})`   : '';
-    const zOrdStr  = zOrd_sc !== null ? ` (z = ${zOrd_sc.toFixed(1)})` : '';
-    const zGramStr = zGram   !== null ? ` (z = ${zGram.toFixed(1)})`   : '';
+    // Preamble — always explains what the task measures, with examples
+    const taskPreamble = `Nesta tarefa, a criança apenas indica se cada frase do Grumpf "soa bem" ou "soa mal", sem precisar de explicar porquê — um nível de <strong>consciência sintáctica</strong> (capacidade de reflectir sobre a forma das frases) adequado à idade pré-escolar, que não requer uso de metalinguagem explícita (Simard, Labelle &amp; Bergeron, 2017). As frases agramaticais do teste contêm dois tipos de violação: (i) <strong>concordância</strong>, em que as palavras não concordam entre si em número ou pessoa — ex: <em>"elas é muito altas"</em> (o sujeito é plural mas o verbo é singular); (ii) <strong>ordem de palavras</strong>, em que as palavras aparecem fora da sua posição habitual — ex: <em>"casa esta é muito grande"</em> (o demonstrativo aparece depois do nome, quando deveria aparecer antes). Em Português Europeu, a sensibilidade a violações de concordância emerge antes da sensibilidade a violações de ordem, cuja aquisição se prolonga pelos primeiros anos de escolaridade (Loureiro, 2008; Perdigão, 2015). `;
 
-    // Preamble: what the task requires
-    const taskPreamble = `Nesta tarefa, a criança indica se cada frase "soa bem" ou não, sem necessidade de explicar porquê — ` +
-      `um nível de consciência sintática adequado para a faixa pré-escolar que não requer metalinguagem explícita (Simard, Labelle & Bergeron, 2017). ` +
-      `A sensibilidade a violações de concordância tende a emergir antes da sensibilidade a violações de ordem de palavras, ` +
-      `cuja aquisição se prolonga pelos primeiros anos de escolaridade (Loureiro, 2008; Perdigão, 2015). `;
+    if (!gramLow && !concLow && !ordLow) {
+      // All within expected
+      note2C = taskPreamble
+        + `Nesta criança, o desempenho está dentro do esperado nas três componentes: frases gramaticais aceites em ${pGram}%${zGramStr}, erros de concordância detectados em ${pConc}%${zConcStr}, erros de ordem detectados em ${pOrd}%${zOrdStr}. `
+        + (canC
+            ? `O perfil é compatível com sensibilidade metalinguística dentro dos limites normativos para ${NORMS[ng].label}.`
+            : `O perfil é compatível com um desenvolvimento típico da consciência sintáctica para a idade.`);
 
-    if (gramLow && concLow && ordLow) {
-      note2C = taskPreamble +
-        `O desempenho foi baixo nas três componentes: frases corretas aceites em ${pctGram}%${zGramStr}, ` +
-        `erros de concordância detectados em ${pctConc}%${zConcStr}, e erros de ordem em ${pctOrd}%${zOrdStr}. ` +
-        `Quando o desempenho é baixo em todos os tipos de julgamento, é possível que as dificuldades não sejam específicas à consciência sintática — ` +
-        `podem estar em causa dificuldades de atenção, de compreensão da tarefa ou um nível mais geral de dificuldade metalinguística. ` +
-        `Importa integrar com o perfil de compreensão e com a observação do comportamento durante a avaliação.`;
+    } else if (!concLow && ordLow && !gramLow) {
+      // Expected preschool pattern: concordance > order
+      note2C = taskPreamble
+        + `O desempenho foi melhor na detecção de erros de concordância (${pConc}%${zConcStr}) do que na detecção de erros de ordem de palavras (${pOrd}%${zOrdStr}). `
+        + `<strong>Este padrão é o esperado para crianças em idade pré-escolar</strong> — a sensibilidade a erros de ordem desenvolve-se mais tarde e continua a melhorar ao longo dos primeiros anos de escolaridade (Perdigão, 2015). `
+        + (canC
+            ? `O desempenho na concordância está dentro do esperado, enquanto a detecção de erros de ordem está abaixo (z = ${zOrd.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.AgrOrder.M*100)}% para ${NORMS[ng].label}). Recomenda-se monitorização ao longo do tempo, sem que por si só este padrão constitua um sinal clínico.`
+            : `Não constitui, por si só, um sinal de alarme. Recomenda-se monitorização.`);
 
-    } else if (!concLow && ordLow) {
-      note2C = taskPreamble +
-        `O desempenho foi melhor na detecção de erros de concordância (${pctConc}%${zConcStr}) do que na de erros de ordem de palavras (${pctOrd}%${zOrdStr}). ` +
-        `Este padrão é o esperado para crianças em idade pré-escolar — a sensibilidade a erros de ordem de palavras desenvolve-se mais tarde do que a sensibilidade a erros de concordância, ` +
-        `e continua a melhorar ao longo dos primeiros anos de escolaridade (Perdigão, 2015). ` +
-        (canC
-          ? `O desempenho na concordância está dentro do esperado para a faixa etária, ` +
-            `enquanto a detecção de erros de ordem está abaixo (z = ${zOrd_sc?.toFixed(1)}; média normativa: ${Math.round(NORMS[ng].sub.AgrOrder.M*100)}% para ${NORMS[ng].label}). ` +
-            `Este resultado pode reflectir uma fase de desenvolvimento ainda em curso e recomenda-se monitorização ao longo do tempo.`
-          : `Para esta faixa etária este padrão não constitui, por si só, um sinal de alarme. Recomenda-se monitorização.`);
+    } else if (concLow && !ordLow && !gramLow) {
+      // ATYPICAL: reverse of expected pattern
+      note2C = taskPreamble
+        + `<strong>Observa-se um padrão inverso ao habitual:</strong> o desempenho foi melhor na detecção de erros de ordem de palavras (${pOrd}%${zOrdStr}) do que na detecção de erros de concordância (${pConc}%${zConcStr}). `
+        + `Estudos em Português Europeu mostram consistentemente que as crianças detectam mais facilmente erros de concordância do que erros de ordem (Loureiro, 2008; Perdigão, 2015). Dificuldades específicas na detecção de erros de concordância podem sugerir <strong>fragilidades na sensibilidade à morfologia de concordância</strong>, e merecem atenção em especial se acompanhadas de erros de concordância na produção oral (p.ex., erros como <em>"este escada é muito alto"</em>, <em>"os menino vai brincar"</em> — cf. Branco, Moreira &amp; Castro, 2011; Silveira, 2006).`;
 
-    } else if (concLow && !ordLow) {
-      note2C = taskPreamble +
-        `O desempenho foi melhor na detecção de erros de ordem de palavras (${pctOrd}%${zOrdStr}) do que na de erros de concordância (${pctConc}%${zConcStr}). ` +
-        `Este padrão é o inverso do que é habitual: estudos em Português Europeu mostram consistentemente que as crianças detectam mais facilmente erros de concordância do que erros de ordem (Loureiro, 2008; Perdigão, 2015). ` +
-        `Dificuldades específicas na detecção de erros de concordância podem sugerir fragilidades na sensibilidade à morfologia de concordância, ` +
-        `e merecem atenção, em especial se acompanhadas de erros de concordância na produção oral.`;
-
-    } else if (concLow && ordLow) {
-      note2C = taskPreamble +
-        `O desempenho foi baixo na detecção de erros de concordância (${pctConc}%${zConcStr}) e de erros de ordem de palavras (${pctOrd}%${zOrdStr}). ` +
-        (gramLow
-          ? `O desempenho baixo também na aceitação de frases corretas (${pctGram}%${zGramStr}) reforça a possibilidade de uma dificuldade mais geral na tarefa de julgamento. `
-          : `O facto de as frases corretas terem sido aceites com bom desempenho (${pctGram}%) indica que a criança compreendeu a tarefa, ` +
-            `mas teve dificuldade em identificar os erros específicos. `) +
-        (canC
-          ? `O desempenho em ambos os tipos de erros está abaixo do esperado para a faixa etária desta criança (concordância: z = ${zConc?.toFixed(1)}, ordem: z = ${zOrd_sc?.toFixed(1)}, grupo ${NORMS[ng].label}). `
-          : '') +
-        `Recomenda-se integrar com o perfil de compreensão e com a observação das produções orais.`;
+    } else if (concLow && ordLow && !gramLow) {
+      // Both violation types low, but grammaticals OK — means task was understood
+      note2C = taskPreamble
+        + `O desempenho foi baixo na detecção de erros de concordância (${pConc}%${zConcStr}) e de erros de ordem de palavras (${pOrd}%${zOrdStr}), embora as frases correctas tenham sido aceites com bom desempenho (${pGram}%${zGramStr}). `
+        + `O facto de a criança aceitar as frases correctas indica que compreendeu a tarefa, mas teve dificuldade em identificar ambos os tipos de erro. `
+        + (canC
+            ? `O desempenho nos erros está abaixo do esperado para ${NORMS[ng].label}. `
+            : '')
+        + `<strong>Recomenda-se integrar com o perfil de compreensão e com a observação das produções orais.</strong>`;
 
     } else if (gramLow && !concLow && !ordLow) {
-      note2C = taskPreamble +
-        `A criança detectou os erros com razoável desempenho mas tendeu a não aceitar as frases corretas (${pctGram}%${zGramStr}). ` +
-        `Este padrão pode reflectir uma estratégia de resposta cautelosa, ou dificuldade em distinguir frases corretas de incorrectas. ` +
-        `Recomenda-se observar o comportamento durante a tarefa e verificar se a criança compreendeu as instruções.`;
+      // Rejection of grammatical sentences
+      note2C = taskPreamble
+        + `A criança detectou os erros com desempenho razoável (concordância: ${pConc}%; ordem: ${pOrd}%) mas <strong>tendeu a não aceitar as frases correctas</strong> (${pGram}%${zGramStr}). `
+        + `Este padrão pode reflectir uma <strong>estratégia de resposta cautelosa</strong> (a criança prefere dizer "soa mal" por defeito) ou dificuldade em distinguir frases correctas de incorrectas. Recomenda-se observar o comportamento durante a administração e verificar se a criança compreendeu as instruções.`;
+
+    } else if (gramLow && concLow && ordLow) {
+      // All three low
+      note2C = taskPreamble
+        + `O desempenho foi baixo nas três componentes: frases correctas aceites em ${pGram}%${zGramStr}, erros de concordância detectados em ${pConc}%${zConcStr}, erros de ordem em ${pOrd}%${zOrdStr}. `
+        + `<strong>Quando o desempenho é baixo em todos os tipos de julgamento</strong>, as dificuldades podem não ser específicas à consciência sintáctica — podem estar em causa dificuldades de atenção, de compreensão da tarefa, ou um nível mais geral de dificuldade metalinguística. `
+        + `<strong>Importa integrar com o perfil de compreensão e com a observação do comportamento durante a avaliação.</strong>`;
+
+    } else if (gramLow && concLow && !ordLow) {
+      // Previously uncovered case
+      note2C = taskPreamble
+        + `O desempenho foi baixo na aceitação de frases correctas (${pGram}%${zGramStr}) e na detecção de erros de concordância (${pConc}%${zConcStr}), mas razoável na detecção de erros de ordem (${pOrd}%${zOrdStr}). `
+        + `Este padrão misto sugere dificuldade específica com a morfologia de concordância e, simultaneamente, com a distinção entre frases correctas e incorrectas. Recomenda-se integrar com as produções orais (a presença de erros de concordância na fala espontânea é clinicamente relevante) e com o perfil de compreensão.`;
+
+    } else {
+      // gramLow && ordLow && !concLow
+      note2C = taskPreamble
+        + `O desempenho foi baixo na aceitação de frases correctas (${pGram}%${zGramStr}) e na detecção de erros de ordem (${pOrd}%${zOrdStr}), mas razoável na detecção de erros de concordância (${pConc}%${zConcStr}). `
+        + `A sensibilidade à concordância emerge antes da sensibilidade à ordem de palavras, pelo que o desempenho baixo nos erros de ordem é esperado para a idade (Perdigão, 2015); já o desempenho baixo nas frases correctas pode indicar estratégia de resposta cautelosa. Recomenda-se observar o comportamento durante a administração.`;
     }
 
     html += taskCard('2C','#3aab6d','Consciência Sintática',
@@ -2232,11 +2408,11 @@ function finish() {
 
   tasksEl.innerHTML = html;
 
-  // ── Item table ──
+  // ── Item table ── (filter out baseline/example items — they are not scored)
   const all = [
-    ...(tk!=='aware' ? I2A.map(i=>({...i,tk:'2A',kk:key('2a',i.n)})) : []),
-    ...(tk!=='aware' ? I2B.map(i=>({...i,tk:'2B',kk:key('2b',i.n)})) : []),
-    ...(tk!=='comp'  ? I2C.map(i=>({...i,tk:'2C',kk:key('2c',i.n)})) : []),
+    ...(tk!=='aware' ? I2A.filter(i=>!i.bl).map(i=>({...i,tk:'2A',kk:key('2a',i.n)})) : []),
+    ...(tk!=='aware' ? I2B.filter(i=>!i.bl).map(i=>({...i,tk:'2B',kk:key('2b',i.n)})) : []),
+    ...(tk!=='comp'  ? I2C.filter(i=>!i.bl).map(i=>({...i,tk:'2C',kk:key('2c',i.n)})) : []),
   ];
   const tbody = document.getElementById('r-tbody'); tbody.innerHTML = '';
   all.forEach(item => {
