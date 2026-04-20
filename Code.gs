@@ -1,30 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // TACCSi — Google Apps Script
 // ───────────────────────────────────────────────────────────────
-// INSTRUÇÕES DE INSTALAÇÃO:
-//
-// 1. Vai a https://sheets.google.com e cria uma nova folha
-//    com o nome "TACCSi_Dados"
-//
-// 2. Nessa folha, vai a Extensões > Apps Script
-//
-// 3. Apaga o código que lá está e cola este ficheiro inteiro
-//
-// 4. Clica em "Guardar" (ícone de disquete)
-//
-// 5. Clica em "Implementar" > "Nova implementação"
-//    - Tipo: "Aplicação Web"
-//    - Executar como: "Eu (o teu email)"
-//    - Quem tem acesso: "Qualquer pessoa"
-//    - Clica "Implementar"
-//
-// 6. Copia o URL que aparece ("URL da aplicação Web")
-//
-// 7. Cola esse URL no ficheiro index.html da app:
-//    const SHEETS_URL = 'https://script.google.com/macros/s/...';
-//
-// ═══════════════════════════════════════════════════════════════
-
 const SHEET_NAME = 'TACCSi_Dados';
 
 // Colunas de metadados (ordem fixa)
